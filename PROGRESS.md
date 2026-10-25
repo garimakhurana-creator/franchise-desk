@@ -17,5 +17,19 @@
 - Metamorphic caveats (documented in tests): spacing is greedy, so "removing an applicant never worsens another" skips ADJACENCY cases; "making a site ready" skips funds-limited applicants (revealing size can correctly turn unknown into a funding decline).
 - Perf: stress500 parse 130 ms, run 330 ms.
 
+## Phase 2, walking skeleton: DONE
+- UI: empty state, parse report, summary strip with pin-rule badge, territory slot strips, results table (cards below 1280 px), decision card (all 7 parts), Ask the desk, Policy (live re-run as a new baseline), How it decides, Data notes, Excel export (sanitised), sample data labelled SAMPLE.
+- Public production deploy: https://franchise-desk-red.vercel.app (Vercel project garima20/franchise-desk). Verified anonymously (curl, Playwright, no cookies).
+
+## Phase 3, follow-ups and hardening: DONE, tagged rc1
+- Pinned approvals, contested detection, Confirm swap (logged), undo, reset, verify, simulate days, audit trail.
+- F1-F16 pass on the rule path (tests/followups.test.ts). Gemini layer: lib/llm.ts adapter, /api/chat (rate limit 12/min/IP, daily budget 400, 3 in flight, cache by message + state hash, 6 s timeout), /api/health. Model: gemini-3.5-flash-lite (1.5 s vs 4 s for full Flash; full Flash timed out with thinking tokens). Model output is zod-validated, IDs must be grounded in the message or recent context, facts are grounded by multilingual keywords and merged with the rule extractor.
+- Rules first: the model is only called when the rules cannot read the message (fast, deterministic, quota-safe). Rules handle Hindi/Kannada/Hinglish updates and questions that include an ID.
+- scripts/acceptance.ts passes in live, no-key and no-server modes, locally (prod build) and on the live URL. stress500 renders in under 0.9 s.
+
+## Known gaps
+- Answers to Hindi/Kannada questions are in English (the rule path says so). A post-checked translation step is planned.
+- Design phase (3D India map, slot towers, motion) not started.
+
 ## Next step
-Phase 2: walking skeleton UI (upload, parse report, summary strip, results table, decision card, policy panel, how-it-decides, export, sample data, rule-based chat), then first public deploy.
+Phase 3b red team (30+ adversarial rows), then Phase 4 design.
