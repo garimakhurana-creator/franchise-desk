@@ -55,6 +55,7 @@ export default function Desk() {
   }, []);
 
   useEffect(() => {
+    document.body.dataset.ready = "1"; // interactive (used by acceptance tests)
     const t = document.documentElement.dataset.theme;
     setTheme(t === "light" || t === "dark" ? t : window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
   }, []);

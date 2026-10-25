@@ -135,6 +135,7 @@ export function ResultsTable({
                 <tr
                   key={d.key}
                   data-key={d.key}
+                  data-status={d.status}
                   tabIndex={0}
                   onClick={() => onSelect(d.key)}
                   onKeyDown={(e) => e.key === "Enter" && onSelect(d.key)}

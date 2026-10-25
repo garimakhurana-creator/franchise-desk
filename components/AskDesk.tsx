@@ -50,7 +50,7 @@ export const AskDesk = forwardRef<HTMLInputElement, { turns: Turn[]; busy: boole
                 t.role === "you" ? (
                   <p key={i} className="mb-2 ml-auto w-fit max-w-[85%] rounded-[14px] rounded-br-[4px] bg-surface-3 px-3 py-1.5 text-[14px]">{t.text}</p>
                 ) : (
-                  <div key={i} className="mb-3 max-w-[96%] text-[14px] leading-relaxed">
+                  <div key={i} data-testid="desk-reply" data-mode={t.mode} className="mb-3 max-w-[96%] text-[14px] leading-relaxed">
                     <div className="mb-1 text-[11px] font-medium text-muted">{t.mode}</div>
                     {t.reply.blocks.map((b, j) => (
                       <BlockView key={j} b={b} onSelect={onSelect} onSwap={onSwap} result={result} />
