@@ -1,0 +1,18 @@
+{
+  "note": "One word per idea, used everywhere in user-facing text.",
+  "terms": {
+    "approved": "Approved: site, slot and pin secured",
+    "conditional": "Conditional: slot reserved for 30 days while one item is completed",
+    "on hold": "On hold: we cannot decide until a detail is fixed; no slot is used",
+    "waitlisted": "Waitlisted: eligible, but another applicant ranks higher for the slot or pin",
+    "declined": "Declined: a hard rule fails; the message says how to re-apply",
+    "withdrawn": "Withdrawn: the applicant left; their slot goes to the next in line",
+    "slot": "A store the brand wants to open in a territory",
+    "usable capacity": "The smaller of open slots and free pin codes",
+    "free pin": "A pin code in the territory with no store of ours",
+    "score": "0 to 100, from funds, experience, space, timing and location",
+    "estimate": "Our estimate of the money needed to open, shown with its arithmetic"
+  },
+  "verbs": { "hold": "hold", "decline": "decline", "approve": "approve", "reserve": "reserve", "waitlist": "waitlist" },
+  "banned": ["insufficient criteria", "does not meet requirements", "not suitable", "due to various factors"]
+}

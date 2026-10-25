@@ -1,0 +1,268 @@
+{
+  "version": "P-2026.10.1",
+  "brand": {
+    "name": "the brand",
+    "category": "retail store",
+    "formatProfile": "retail"
+  },
+  "bars": {
+    "approval": 55,
+    "decline": 35,
+    "priorityAdjust": {
+      "High": -5,
+      "Medium": 0,
+      "Low": 5
+    }
+  },
+  "capex": {
+    "fitoutPerSqft": {
+      "1": 1800,
+      "2": 1400,
+      "3": 1100
+    },
+    "stockPerSqft": {
+      "1": 1500,
+      "2": 1100,
+      "3": 900
+    },
+    "franchiseFeeLakh": {
+      "1": 4,
+      "2": 4,
+      "3": 3
+    },
+    "rentPerSqftMonth": {
+      "1": 120,
+      "2": 70,
+      "3": 45
+    },
+    "depositMonths": 6,
+    "runwayMonths": 3,
+    "bufferPct": 10,
+    "idealSize": {
+      "1": 600,
+      "2": 450,
+      "3": 350
+    },
+    "minSize": {
+      "1": 400,
+      "2": 300,
+      "3": 250
+    },
+    "declineBelowPct": 70,
+    "smallBelowPct": 70,
+    "largeSpaceNoExperienceSqft": 1200
+  },
+  "sanity": {
+    "investRupeesThreshold": 5000,
+    "maxExperienceYears": 45,
+    "sqmSuspectBelow": 120,
+    "maxPlausibleSqft": 20000,
+    "outlierInvestLakh": 150
+  },
+  "score": {
+    "capital": {
+      "max": 25,
+      "fullAtRatio": 1.5,
+      "atRatioOne": 15
+    },
+    "experience": {
+      "max": 20,
+      "yearsCap": 8,
+      "yearsPoints": 14,
+      "relevancePoints": 6
+    },
+    "space": {
+      "max": 25,
+      "tenure": {
+        "Owned": 10,
+        "Rented": 7,
+        "None": 0
+      },
+      "sizePoints": 8,
+      "noSiteCredit": 5,
+      "floor": {
+        "retail": {
+          "Ground": 7,
+          "Mall": 5,
+          "Upper": 3,
+          "Unknown": 0
+        },
+        "logistics": {
+          "Ground": 7,
+          "Mall": 1,
+          "Upper": 0,
+          "Unknown": 0
+        }
+      }
+    },
+    "timeline": {
+      "max": 10,
+      "minPoints": 2,
+      "unknownPoints": 6
+    },
+    "territory": {
+      "max": 20,
+      "priorityPoints": {
+        "High": 10,
+        "Medium": 7,
+        "Low": 4
+      },
+      "cannibalisationPoints": 10
+    }
+  },
+  "cannibalisation": {
+    "highKm": 2,
+    "mediumKm": 5,
+    "proxyHighGap": 5,
+    "proxyMediumGap": 25,
+    "penaltyHigh": 8,
+    "penaltyMedium": 4,
+    "maturity": [
+      {
+        "maxAgeYears": 2,
+        "weight": 1,
+        "label": "still ramping up"
+      },
+      {
+        "maxAgeYears": 4,
+        "weight": 0.75,
+        "label": "settling in"
+      },
+      {
+        "maxAgeYears": 999,
+        "weight": 0.5,
+        "label": "mature"
+      }
+    ]
+  },
+  "spacing": {
+    "km": 1.5,
+    "proxyGap": 2
+  },
+  "density": {
+    "capPerCityByTier": {
+      "1": 12,
+      "2": 5,
+      "3": 3
+    }
+  },
+  "timeline": {
+    "kycAgreementWeeks": 2,
+    "siteWeeks": {
+      "Owned": 0,
+      "Rented": 1,
+      "None": 6
+    },
+    "fitoutWeeks": 4,
+    "fitoutExtra": {
+      "Mall": 3,
+      "Upper": 1,
+      "Ground": 0,
+      "Unknown": 0
+    },
+    "stockPosWeeks": 2,
+    "tier3LogisticsWeeks": 2,
+    "weeksPerMonth": 4.345
+  },
+  "training": {
+    "tracks": [
+      {
+        "minYears": 0,
+        "maxYears": 0,
+        "name": "Foundation",
+        "weeks": 3
+      },
+      {
+        "minYears": 1,
+        "maxYears": 2,
+        "name": "Standard",
+        "weeks": 2
+      },
+      {
+        "minYears": 3,
+        "maxYears": 999,
+        "name": "Accelerated",
+        "weeks": 1
+      }
+    ],
+    "tier3Mode": "Hybrid: online modules plus 1 week in person",
+    "defaultMode": "In person at the training centre"
+  },
+  "supply": {
+    "hubs": [
+      {
+        "name": "Bengaluru DC",
+        "servesPrefixes": [
+          "560",
+          "572",
+          "570"
+        ],
+        "leadDays": {
+          "560": 1,
+          "572": 2,
+          "570": 2
+        }
+      },
+      {
+        "name": "Hubballi DC",
+        "servesPrefixes": [
+          "580",
+          "590",
+          "577"
+        ],
+        "leadDays": {
+          "580": 1,
+          "590": 2,
+          "577": 2
+        }
+      },
+      {
+        "name": "Mangaluru DC",
+        "servesPrefixes": [
+          "575"
+        ],
+        "leadDays": {
+          "575": 1
+        }
+      }
+    ],
+    "safetyStockDaysPerLeadDay": 3,
+    "minSafetyStockDays": 4
+  },
+  "payback": {
+    "revenuePerSqftMonth": {
+      "1": 1800,
+      "2": 1400,
+      "3": 1000
+    },
+    "grossMarginPct": 35,
+    "royaltyPct": 5,
+    "otherOpexPct": 4,
+    "staffCostLakhMonth": {
+      "1": 1.0,
+      "2": 0.8,
+      "3": 0.6
+    },
+    "flagAboveMonths": 36
+  },
+  "windows": {
+    "conditionalDays": 30,
+    "holdCloseDays": 14
+  },
+  "stability": {
+    "scoreMargin": 5,
+    "rankMargin": 3,
+    "nudgePct": 10
+  },
+  "festivals": [
+    {
+      "name": "Diwali",
+      "date": "2026-11-08"
+    },
+    {
+      "name": "Diwali",
+      "date": "2027-10-29"
+    }
+  ],
+  "festivalsNote": "Illustrative calendar. Verify dates each year before relying on them."
+}

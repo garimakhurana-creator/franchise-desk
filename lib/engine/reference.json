@@ -1,0 +1,24 @@
+{
+  "note": "Default reference data from the case template (Allowed values and the fixed Existing stores sheet). Used only when an uploaded file lacks these sheets.",
+  "cities": [
+    { "city": "Bengaluru", "state": "Karnataka", "prefix": "560", "tier": 1 },
+    { "city": "Mysuru", "state": "Karnataka", "prefix": "570", "tier": 2 },
+    { "city": "Mangaluru", "state": "Karnataka", "prefix": "575", "tier": 2 },
+    { "city": "Hubballi-Dharwad", "state": "Karnataka", "prefix": "580", "tier": 2 },
+    { "city": "Belagavi", "state": "Karnataka", "prefix": "590", "tier": 2 },
+    { "city": "Tumakuru", "state": "Karnataka", "prefix": "572", "tier": 3 },
+    { "city": "Davanagere", "state": "Karnataka", "prefix": "577", "tier": 3 }
+  ],
+  "stores": [
+    { "id": "ST-01", "city": "Bengaluru", "pin": "560001", "year": 2019 },
+    { "id": "ST-02", "city": "Bengaluru", "pin": "560034", "year": 2020 },
+    { "id": "ST-03", "city": "Bengaluru", "pin": "560038", "year": 2021 },
+    { "id": "ST-04", "city": "Bengaluru", "pin": "560066", "year": 2022 },
+    { "id": "ST-05", "city": "Bengaluru", "pin": "560076", "year": 2023 },
+    { "id": "ST-06", "city": "Mysuru", "pin": "570009", "year": 2021 },
+    { "id": "ST-07", "city": "Mysuru", "pin": "570017", "year": 2024 },
+    { "id": "ST-08", "city": "Mangaluru", "pin": "575001", "year": 2022 },
+    { "id": "ST-09", "city": "Hubballi-Dharwad", "pin": "580020", "year": 2023 },
+    { "id": "ST-10", "city": "Belagavi", "pin": "590001", "year": 2024 }
+  ]
+}
