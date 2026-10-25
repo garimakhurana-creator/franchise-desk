@@ -17,13 +17,16 @@ import { ResultsTable } from "./ResultsTable";
 import { DecisionCard } from "./DecisionCard";
 import { AskDesk, type Turn } from "./AskDesk";
 import { Drawer, PolicyPanel, MethodPanel, DataNotesPanel } from "./Panels";
+import { SelfTestPanel, TowerPanel } from "./TowerPanels";
+import { selfTest } from "@/lib/engine/selftest";
+import { controlTower } from "@/lib/engine/tower";
 
 const todayIso = () => {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 };
 
-type PanelName = "policy" | "method" | "notes" | null;
+type PanelName = "policy" | "method" | "notes" | "selftest" | "tower" | null;
 
 export default function Desk() {
   const [chat, setChat] = useState<ChatState | null>(null);
@@ -275,9 +278,11 @@ export default function Desk() {
           <nav className="ml-auto flex items-center gap-1" aria-label="Tools">
             {result && (
               <>
+                <HeaderButton onClick={() => setPanel("tower")} icon={<Icon.Clock />} label="Control tower" />
                 <HeaderButton onClick={() => setPanel("policy")} icon={<Icon.Sliders />} label="Policy" />
                 <HeaderButton onClick={() => setPanel("method")} icon={<Icon.Book />} label="How it decides" />
                 <HeaderButton onClick={() => setPanel("notes")} icon={<Icon.Notes />} label="Data notes" />
+                <HeaderButton onClick={() => setPanel("selftest")} icon={<Icon.Shield />} label="Self-test" />
                 <HeaderButton
                   onClick={async () => {
                     const { downloadExport } = await import("@/lib/export");
@@ -352,6 +357,24 @@ export default function Desk() {
       </Drawer>
       <Drawer open={panel === "method"} title="How it decides" onClose={() => setPanel(null)}>
         <MethodPanel policy={policy} />
+      </Drawer>
+      <Drawer open={panel === "selftest"} title="Integrity self-test" onClose={() => setPanel(null)}>
+        {step && <SelfTestPanel run={() => selfTest(step.dataset, step.policy, { today, pinned: {} })} />}
+      </Drawer>
+      <Drawer open={panel === "tower"} title="Control tower" onClose={() => setPanel(null)}>
+        {result && (
+          <TowerPanel
+            tower={controlTower(result, policy, today)}
+            onSelect={(k) => {
+              setSelected(k);
+              setPanel(null);
+            }}
+            onSimulate={(days) => {
+              pushUpdate({ kind: "days", days, text: `${days} days passed with no news` }, `Simulated ${days} days.`);
+              setPanel(null);
+            }}
+          />
+        )}
       </Drawer>
       <Drawer open={panel === "notes"} title="Data notes" onClose={() => setPanel(null)}>
         {dataset && <DataNotesPanel dataset={dataset} log={chat?.session.log ?? []} />}
