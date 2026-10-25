@@ -30,3 +30,15 @@ describe("model output normalisation (mocked adapter)", () => {
     expect(normaliseModelOutput({ commands: [{ intent: "approve_everyone" }] }, "hi", [])).toBeNull();
   });
 });
+
+import { sameFacts } from "@/lib/chat/translate";
+describe("translation post-check", () => {
+  it("accepts a translation with the same numbers and IDs", () => {
+    expect(sameFacts("APP-004: pin 570009 has store ST-06; score 96.", "APP-004: पिन 570009 पर स्टोर ST-06 है; स्कोर 96।")).toBe(true);
+  });
+  it("rejects a changed, dropped or added fact", () => {
+    expect(sameFacts("score 96 vs 84", "स्कोर 96 बनाम 85")).toBe(false);
+    expect(sameFacts("APP-004 and APP-003", "APP-004")).toBe(false);
+    expect(sameFacts("score 96", "स्कोर 96, 100 में से")).toBe(false);
+  });
+});

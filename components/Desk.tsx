@@ -6,7 +6,7 @@ import { newSession, replay, effectivePolicy, type Update } from "@/lib/engine/s
 import { parseWorkbook, ParseError } from "@/lib/parse/parse";
 import { readWorkbook, MAX_FILE_BYTES } from "@/lib/parse/xlsx";
 import { parseRules } from "@/lib/chat/rules";
-import { respond, type ChatState, type Reply } from "@/lib/chat/respond";
+import { respond, replyText, type ChatState, type Reply } from "@/lib/chat/respond";
 import { ParsedSchema, type Parsed } from "@/lib/chat/commands";
 import type { Dataset, Status } from "@/lib/engine/types";
 import { Icon } from "./icons";
@@ -196,7 +196,18 @@ export default function Desk() {
         const at = new Date().toISOString();
         const { state, reply } = respond({ ...chat, memory }, parsed, at, mode);
         setChat({ ...state, memory });
-        setTurns((t) => [...t, { role: "desk", reply, mode }]);
+        const lang = parsed.language === "Hindi" || parsed.language === "Kannada" ? parsed.language : null;
+        const shown: Reply = lang && ai === "on" ? { ...reply, blocks: reply.blocks.filter((b) => !(b.kind === "text" && b.text.startsWith("(Rule-based mode answers"))) } : reply;
+        const turnIndex = turns.length + 1;
+        setTurns((t) => [...t, { role: "desk", reply: shown, mode }]);
+        if (lang && ai === "on") {
+          // Translate the finished answer; the server rejects any translation that changes a number or ID.
+          const lines = replyText(shown).split(/\n/).filter(Boolean).slice(0, 30);
+          fetch("/api/translate", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ lines, lang }), signal: AbortSignal.timeout(8000) })
+            .then((r) => (r.ok ? r.json() : null))
+            .then((j) => setTurns((t) => t.map((x, i) => (i === turnIndex && x.role === "desk" ? { ...x, translated: j?.lines ? { lang, lines: j.lines } : { lang, lines: null } } : x))))
+            .catch(() => setTurns((t) => t.map((x, i) => (i === turnIndex && x.role === "desk" ? { ...x, translated: { lang, lines: null } } : x))));
+        }
         if (reply.focus.length) {
           setHighlight(reply.focus);
           if (reply.focus.length === 1) setSelected(reply.focus[0]);
@@ -205,7 +216,7 @@ export default function Desk() {
         setBusy(false);
       }
     },
-    [chat, tryModel],
+    [chat, tryModel, ai, turns.length],
   );
 
   const pushUpdate = useCallback(

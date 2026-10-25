@@ -5,7 +5,7 @@ import { changeLine, type Block, type Reply } from "@/lib/chat/respond";
 import type { RunResult } from "@/lib/engine/types";
 import { Icon, StatusGlyph } from "./icons";
 
-export type Turn = { role: "you"; text: string } | { role: "desk"; reply: Reply; mode: Reply["mode"] };
+export type Turn = { role: "you"; text: string } | { role: "desk"; reply: Reply; mode: Reply["mode"]; translated?: { lang: "Hindi" | "Kannada"; lines: string[] | null } };
 
 function suggestions(r: RunResult): string[] {
   const out: string[] = [];
@@ -51,10 +51,21 @@ export const AskDesk = forwardRef<HTMLInputElement, { turns: Turn[]; busy: boole
                   <p key={i} className="mb-2 ml-auto w-fit max-w-[85%] rounded-[14px] rounded-br-[4px] bg-surface-3 px-3 py-1.5 text-[14px]">{t.text}</p>
                 ) : (
                   <div key={i} data-testid="desk-reply" data-mode={t.mode} className="mb-3 max-w-[96%] text-[14px] leading-relaxed">
-                    <div className="mb-1 text-[11px] font-medium text-muted">{t.mode}</div>
-                    {t.reply.blocks.map((b, j) => (
-                      <BlockView key={j} b={b} onSelect={onSelect} onSwap={onSwap} result={result} />
-                    ))}
+                    <div className="mb-1 text-[11px] font-medium text-muted">{t.mode}{t.translated?.lines ? ` · translated to ${t.translated.lang}, numbers and IDs checked` : t.translated ? " · translation unavailable, showing English" : ""}</div>
+                    {t.translated?.lines ? (
+                      <>
+                        <div className="indic space-y-1" lang={t.translated.lang === "Hindi" ? "hi" : "kn"}>
+                          {t.translated.lines.map((l, j) => <p key={j} className={l.startsWith("•") ? "pl-3 text-ink-2" : ""}>{linkIds(l, result, onSelect)}</p>)}
+                        </div>
+                        <details className="mt-1.5 text-[13px] text-muted">
+                          <summary className="cursor-pointer">Show in English</summary>
+                          {t.reply.blocks.map((b, j) => <BlockView key={j} b={b} onSelect={onSelect} onSwap={onSwap} result={result} />)}
+                        </details>
+                      </>
+                    ) : (
+                      t.reply.blocks.map((b, j) => <BlockView key={j} b={b} onSelect={onSelect} onSwap={onSwap} result={result} />)
+                    )}
+                    {t.translated?.lines && t.reply.blocks.filter((b) => b.kind === "swap").map((b, j) => <BlockView key={"s" + j} b={b} onSelect={onSelect} onSwap={onSwap} result={result} />)}
                   </div>
                 ),
               )}
