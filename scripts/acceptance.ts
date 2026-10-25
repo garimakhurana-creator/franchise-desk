@@ -38,11 +38,11 @@ async function upload(page: Page, file: string) {
   await page.goto(BASE, { waitUntil: "domcontentloaded" });
   await page.waitForSelector("body[data-ready]", { timeout: 30000 });
   await page.setInputFiles("#file", file);
-  await page.waitForSelector("tr[data-key]", { timeout: 20000 });
+  await page.waitForSelector("[data-key][data-status]", { timeout: 20000 });
 }
 
 async function statuses(page: Page): Promise<Record<string, string>> {
-  return page.$$eval("tr[data-key]", (rows) => Object.fromEntries(rows.map((r) => [r.getAttribute("data-key")!, r.getAttribute("data-status")!])));
+  return page.$$eval("[data-key][data-status]", (rows) => Object.fromEntries(rows.map((r) => [r.getAttribute("data-key")!, r.getAttribute("data-status")!])));
 }
 
 async function ask(page: Page, text: string) {

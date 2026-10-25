@@ -74,7 +74,10 @@ export default function TerrainMap(props: TerrainMapProps) {
     }
     let map: MLMap;
     try {
-      map = new maplibregl.Map({ container: el, style: style(props.theme), ...INDIA_VIEW, maxPitch: 72, attributionControl: { compact: true }, fadeDuration: 0 });
+      map = new maplibregl.Map({ container: el, style: style(props.theme), ...INDIA_VIEW, maxPitch: 72, attributionControl: false, fadeDuration: 0 });
+      // credits stay available behind an (i) button, collapsed so they never cover the console
+      map.addControl(new maplibregl.AttributionControl({ compact: true }), "bottom-right");
+      map.once("load", () => el.querySelector(".maplibregl-ctrl-attrib")?.classList.remove("maplibregl-compact-show"));
     } catch (e) {
       props.onFail(`map could not start (${(e as Error).message})`);
       return;
@@ -324,7 +327,7 @@ export default function TerrainMap(props: TerrainMapProps) {
     <div className="relative h-full w-full">
       {/* inline position: MapLibre adds its own position:relative class to the container */}
       <div ref={box} style={{ position: "absolute", inset: 0 }} />
-      <div className="tm-legend pointer-events-none absolute bottom-3 left-3 max-w-[300px] rounded-[10px] px-3 py-2 text-[11.5px] leading-snug">
+      <div className="tm-legend pointer-events-none absolute bottom-3 left-3 max-w-[300px] lg:bottom-[146px] lg:left-[330px] rounded-[10px] px-3 py-2 text-[11.5px] leading-snug">
         <div className="flex flex-wrap gap-x-2.5 gap-y-1">
           {STATUS_ORDER.slice(0, 5).map((s) => (
             <span key={s} className="inline-flex items-center gap-1">

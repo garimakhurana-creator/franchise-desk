@@ -12,13 +12,14 @@ import { ParsedSchema, type Parsed } from "@/lib/chat/commands";
 import type { Dataset, RunResult, Status } from "@/lib/engine/types";
 import { Icon } from "./icons";
 import { EmptyState } from "./EmptyState";
-import { TerritoryRail } from "./TerritoryRail";
-import { SummaryStrip } from "./Summary";
 import { ResultsTable } from "./ResultsTable";
 import { DecisionCard } from "./DecisionCard";
 import { AskDesk, type Turn } from "./AskDesk";
 import { Drawer, PolicyPanel, MethodPanel, DataNotesPanel } from "./Panels";
 import { SelfTestPanel, TowerPanel } from "./TowerPanels";
+import { HudStats } from "./hud/HudStats";
+import { MissionPanel } from "./hud/MissionPanel";
+import { Roster } from "./hud/Roster";
 import { selfTest } from "@/lib/engine/selftest";
 import { controlTower } from "@/lib/engine/tower";
 
@@ -27,7 +28,7 @@ const todayIso = () => {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 };
 
-type PanelName = "policy" | "method" | "notes" | "selftest" | "tower" | null;
+type PanelName = "policy" | "method" | "notes" | "selftest" | "tower" | "ledger" | null;
 
 export default function Desk() {
   const [chat, setChat] = useState<ChatState | null>(null);
@@ -42,7 +43,6 @@ export default function Desk() {
   const [statusFilter, setStatusFilter] = useState<Status[]>([]);
   const [highlight, setHighlight] = useState<string[]>([]);
   const [notice, setNotice] = useState<string | null>(null);
-  const [theme, setTheme] = useState<"light" | "dark" | null>(null);
   const askRef = useRef<HTMLInputElement>(null);
   const today = useMemo(todayIso, []);
 
@@ -60,19 +60,7 @@ export default function Desk() {
 
   useEffect(() => {
     document.body.dataset.ready = "1"; // interactive (used by acceptance tests)
-    const t = document.documentElement.dataset.theme;
-    setTheme(t === "light" || t === "dark" ? t : window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
   }, []);
-  const toggleTheme = () => {
-    const next = theme === "dark" ? "light" : "dark";
-    document.documentElement.dataset.theme = next;
-    try {
-      localStorage.setItem("fd-theme", next);
-    } catch {
-      /* storage is optional */
-    }
-    setTheme(next);
-  };
 
   const steps = useMemo(() => (chat ? replay(chat.session) : null), [chat]);
   const step = steps?.at(-1) ?? null;
@@ -258,22 +246,28 @@ export default function Desk() {
 
   return (
     <div className="min-h-dvh flex flex-col">
-      <header className="sticky top-0 z-30 border-b border-line bg-bg/90 backdrop-blur-[2px]">
-        <div className="mx-auto flex max-w-[1680px] items-center gap-3 px-4 py-2.5">
-          <a href="/" className="flex items-baseline gap-2 shrink-0" aria-label="Franchise Desk home">
-            <span className="serif text-[22px] leading-none italic">Franchise</span>
-            <span className="text-[15px] font-semibold tracking-tight">Desk</span>
+      <header className="hud sticky top-0 z-30 border-b border-line/70 bg-bg/85 backdrop-blur-md">
+        <div className="mx-auto flex max-w-[1800px] items-center gap-3 px-4 py-2">
+          <a href="/" className="flex shrink-0 items-center gap-2.5" aria-label="Franchise Desk home">
+            <span className="grid size-8 place-items-center" style={{ background: "var(--gold)", clipPath: "polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0 50%)", color: "var(--on-gold)" }} aria-hidden>
+              <Icon.Store size={16} />
+            </span>
+            <span className="flex flex-col leading-none">
+              <span className="hud-num text-[16px] tracking-[0.08em] text-ink">FRANCHISE DESK</span>
+              <span className="hud-label mt-0.5 text-[9.5px]">Expansion command</span>
+            </span>
           </a>
           {result && dataset && (
-            <div className="hidden md:flex items-center gap-2 whitespace-nowrap text-[12px] text-muted min-w-0">
-              {dataset.source === "sample" && <span className="rounded px-1.5 py-0.5 font-semibold text-[11px]" style={{ background: "var(--gold-soft)", color: "var(--gold)" }}>SAMPLE DATA</span>}
-              {dataset.source !== "sample" && <span className="truncate max-w-[22ch]" title={dataset.fileName}>{dataset.fileName}</span>}
+            <div className="hud-num ml-3 hidden min-w-0 items-center gap-2 whitespace-nowrap text-[11.5px] font-medium text-muted md:flex">
+              {dataset.source !== "sample" && <span className="max-w-[22ch] truncate" title={dataset.fileName}>{dataset.fileName}</span>}
+              <span title="Run ID: a hash of the input, policy and date">RUN {result.runId}</span>
               <span aria-hidden>·</span>
-              <span className="num" title="Run ID: a hash of the input, policy and date">run {result.runId}</span>
+              <span>POLICY {result.policyVersion}</span>
               <span aria-hidden>·</span>
-              <span className="num">policy {result.policyVersion}</span>
-              <span aria-hidden>·</span>
-              <span title={ai === "on" ? "Questions are parsed by rules first; the model only helps with phrasing the rules do not understand. It never decides." : "Model unavailable or not configured: every answer comes from the rule-based parser."}>{modeBadge}</span>
+              <span className="inline-flex items-center gap-1.5" title={ai === "on" ? "Questions are parsed by rules first; the model only helps with phrasing the rules do not understand. It never decides." : "Model unavailable or not configured: every answer comes from the rule-based parser."}>
+                <i className="inline-block size-1.5 rounded-full" style={{ background: ai === "on" ? "var(--approved)" : "var(--muted)", boxShadow: ai === "on" ? "0 0 8px var(--approved)" : undefined }} />
+                {ai === "on" ? "AI STANDBY" : "RULE-BASED"}
+              </span>
             </div>
           )}
           <nav className="ml-auto flex min-w-0 items-center gap-1 overflow-x-auto scrollbar-thin" aria-label="Tools">
@@ -296,9 +290,6 @@ export default function Desk() {
               </>
             )}
             {!result && <HeaderButton onClick={() => setPanel("method")} icon={<Icon.Book />} label="How it decides" />}
-            <button type="button" onClick={toggleTheme} className="ml-1 grid size-9 place-items-center rounded-full text-ink-2 hover:bg-surface-2" aria-label={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}>
-              {theme === "dark" ? <Icon.Sun /> : <Icon.Moon />}
-            </button>
           </nav>
         </div>
       </header>
@@ -306,29 +297,50 @@ export default function Desk() {
       {!result || !dataset || !steps ? (
         <EmptyState onFile={onFile} onSample={onSample} error={error} loading={loading} />
       ) : (
-        <main className="mx-auto w-full max-w-[1680px] flex-1 grid grid-cols-1 lg:grid-cols-[264px_minmax(0,1fr)] gap-0">
-          <TerritoryRail result={result} active={terrFilter} onPick={(k) => setTerrFilter((cur) => (cur === k ? null : k))} />
-          <section className="min-w-0 flex flex-col px-4 pb-40 lg:pb-36">
-            {error && <p role="alert" className="mt-3 rounded-md border border-declined/40 px-3 py-2 text-sm text-declined">{error}</p>}
-            <MapStage result={result} selected={selected} highlight={highlight} onSelect={setSelected} theme={theme ?? "dark"} activeTerritory={terrFilter} onPickTerritory={setTerrFilter} />
-            <SummaryStrip dataset={dataset} result={result} statusFilter={statusFilter} onStatus={setStatusFilter} onNotes={() => setPanel("notes")} />
-            {notice && (
-              <div className="rise mt-2 flex items-center gap-2 rounded-md bg-surface-2 px-3 py-2 text-[13px]" role="status">
-                <Icon.Spark className="text-gold" />
-                <span>{notice}</span>
-                <button className="ml-auto text-muted hover:text-ink" onClick={() => setNotice(null)} aria-label="Dismiss notice"><Icon.Close size={14} /></button>
+        <main className="relative flex-1">
+          {/* The world: India in relief behind every panel */}
+          <WorldMap result={result} selected={selected} highlight={highlight} onSelect={setSelected} activeTerritory={terrFilter} onPickTerritory={setTerrFilter} />
+          {/* The HUD */}
+          <div className="pointer-events-none relative z-10 mx-auto flex max-w-[1800px] flex-col gap-3 px-3 pt-3 pb-40 lg:h-[calc(100dvh-53px)] lg:pb-[132px]">
+            <div className="pointer-events-auto">
+              <HudStats result={result} statusFilter={statusFilter} onStatus={setStatusFilter} sample={dataset.source === "sample"} />
+              <div className="hud mt-1.5 flex flex-wrap items-center gap-x-3 px-1 text-[11.5px] font-medium text-muted">
+                <span>
+                  READ <span className="hud-num text-ink-2">{dataset.applications.length}</span> APPLICATIONS · <span className="hud-num text-ink-2">{dataset.territories.length}</span> TERRITORIES · <span className="hud-num text-ink-2">{dataset.rowsIgnored.length}</span> ROWS IGNORED
+                </span>
+                <button type="button" onClick={() => setPanel("notes")} className="underline decoration-dotted underline-offset-2 hover:text-ink">
+                  {dataset.notes.filter((n) => n.severity !== "info").length} DATA ISSUES · {dataset.notes.filter((n) => n.severity === "info").length} NOTES
+                </button>
+                {error && <span role="alert" className="text-declined">{error}</span>}
               </div>
-            )}
-            <ResultsTable
-              decisions={result.decisions}
-              selected={selected}
-              highlight={highlight}
-              terrFilter={terrFilter}
-              statusFilter={statusFilter}
-              onClearFilters={() => { setTerrFilter(null); setStatusFilter([]); }}
-              onSelect={setSelected}
-            />
-          </section>
+            </div>
+            <div className="grid min-h-0 flex-1 grid-cols-1 gap-3 lg:grid-cols-[300px_minmax(0,1fr)_minmax(380px,430px)]">
+              <div className="pointer-events-auto min-h-0">
+                <MissionPanel result={result} active={terrFilter} onPick={setTerrFilter} />
+              </div>
+              <div aria-hidden className="hidden lg:block" />
+              <div className="pointer-events-auto min-h-0 lg:h-full">
+                <Roster
+                  decisions={result.decisions}
+                  selected={selected}
+                  highlight={highlight}
+                  terrFilter={terrFilter}
+                  statusFilter={statusFilter}
+                  onStatus={setStatusFilter}
+                  onClearTerritory={() => setTerrFilter(null)}
+                  onSelect={setSelected}
+                  onLedger={() => setPanel("ledger")}
+                />
+              </div>
+            </div>
+          </div>
+          {notice && (
+            <div className="hud rise pointer-events-auto fixed left-1/2 bottom-[150px] z-30 flex -translate-x-1/2 items-center gap-2 rounded-lg border px-3 py-2 text-[13px]" role="status" style={{ background: "var(--hud-bg)", borderColor: "var(--hud-edge)", boxShadow: "0 0 30px -10px var(--gold)" }}>
+              <Icon.Spark className="text-gold" />
+              <span>{notice}</span>
+              <button className="ml-2 text-muted hover:text-ink" onClick={() => setNotice(null)} aria-label="Dismiss notice"><Icon.Close size={14} /></button>
+            </div>
+          )}
         </main>
       )}
 
@@ -360,6 +372,19 @@ export default function Desk() {
       <Drawer open={panel === "method"} title="How it decides" onClose={() => setPanel(null)}>
         <MethodPanel policy={policy} />
       </Drawer>
+      <Drawer open={panel === "ledger"} title="Ledger: every application" onClose={() => setPanel(null)} wide>
+        {result && (
+          <ResultsTable
+            decisions={result.decisions}
+            selected={selected}
+            highlight={highlight}
+            terrFilter={terrFilter}
+            statusFilter={statusFilter}
+            onClearFilters={() => { setTerrFilter(null); setStatusFilter([]); }}
+            onSelect={(k) => { setSelected(k); setPanel(null); }}
+          />
+        )}
+      </Drawer>
       <Drawer open={panel === "selftest"} title="Integrity self-test" onClose={() => setPanel(null)}>
         {step && <SelfTestPanel run={() => selfTest(step.dataset, step.policy, { today, pinned: {} })} />}
       </Drawer>
@@ -390,35 +415,17 @@ const TerrainMap = dynamic(() => import("./map/TerrainMap"), {
   loading: () => <div className="grid h-full place-items-center text-[13px] text-muted">Loading the map…</div>,
 });
 
-/** The 3D map above the table. Optional by design: any failure hides it and the table carries everything. */
-function MapStage({ result, selected, highlight, onSelect, theme, activeTerritory, onPickTerritory }: { result: RunResult; selected: string | null; highlight: string[]; onSelect: (k: string) => void; theme: "light" | "dark"; activeTerritory: string | null; onPickTerritory: (k: string | null) => void }) {
-  const [show, setShow] = useState<boolean | null>(null);
+/** The world behind the HUD. Optional by design: any failure leaves a calm backdrop and the roster carries everything. */
+function WorldMap({ result, selected, highlight, onSelect, activeTerritory, onPickTerritory }: { result: RunResult; selected: string | null; highlight: string[]; onSelect: (k: string) => void; activeTerritory: string | null; onPickTerritory: (k: string | null) => void }) {
   const [failed, setFailed] = useState<string | null>(null);
   const [reduced, setReduced] = useState(false);
-  useEffect(() => {
-    setReduced(window.matchMedia("(prefers-reduced-motion: reduce)").matches);
-    setShow(true);
-  }, []);
-  if (show === null) return null;
+  useEffect(() => setReduced(window.matchMedia("(prefers-reduced-motion: reduce)").matches), []);
   return (
-    <section className="mt-4" aria-label="Map of territories, stores and applications">
-      <div className="mb-2 flex items-center gap-2 text-[13px]">
-        <Icon.Map className="text-muted" />
-        <span className="font-medium text-ink-2">India, in relief: tap a territory to see its requests</span>
-        {failed ? (
-          <span className="text-muted">Map unavailable ({failed}). Everything is in the table below.</span>
-        ) : (
-          <button type="button" onClick={() => setShow((s) => !s)} className="ml-auto rounded-full px-2.5 py-1 text-muted hover:bg-surface-2 hover:text-ink" aria-expanded={!!show}>
-            {show ? "Hide map" : "Show map"}
-          </button>
-        )}
-      </div>
-      {show && !failed && (
-        <div className="h-[min(56vh,460px)] overflow-hidden rounded-[var(--radius-l)] border border-line lg:h-[min(70vh,700px)]" style={{ boxShadow: "var(--shadow)", background: "linear-gradient(#2a2236, #0b1820)" }}>
-          <TerrainMap result={result} selected={selected} highlight={highlight} onSelect={onSelect} theme={theme} reducedMotion={reduced} onFail={(r) => setFailed(r)} activeTerritory={activeTerritory} onPickTerritory={onPickTerritory} />
-        </div>
-      )}
-    </section>
+    <div className="relative h-[52vh] w-full lg:fixed lg:inset-x-0 lg:bottom-0 lg:top-[53px] lg:h-auto" aria-label="Map of India with territories, stores and applications" style={{ background: "radial-gradient(90% 70% at 55% 35%, #1a2232 0%, #060a10 70%)" }}>
+      {!failed && <TerrainMap result={result} selected={selected} highlight={highlight} onSelect={onSelect} theme="dark" reducedMotion={reduced} onFail={(r) => setFailed(r)} activeTerritory={activeTerritory} onPickTerritory={onPickTerritory} />}
+      <div className="world-vignette pointer-events-none absolute inset-0" aria-hidden />
+      {failed && <p className="hud absolute bottom-[150px] left-1/2 -translate-x-1/2 text-[12px] text-muted">Map unavailable ({failed}). Every decision is in the roster.</p>}
+    </div>
   );
 }
 

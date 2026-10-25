@@ -7,13 +7,14 @@ export function EmptyState({ onFile, onSample, error, loading }: { onFile: (f: F
   const [over, setOver] = useState(false);
   const input = useRef<HTMLInputElement>(null);
   return (
-    <main className="mx-auto grid w-full max-w-[1180px] flex-1 grid-cols-1 items-center gap-10 px-4 py-10 md:grid-cols-[1.1fr_0.9fr] md:py-16">
+    <main className="relative isolate mx-auto grid w-full max-w-[1240px] flex-1 grid-cols-1 items-center gap-10 px-4 py-10 md:grid-cols-[1.1fr_0.9fr] md:py-16">
+      <div aria-hidden className="pointer-events-none fixed inset-0 -z-10" style={{ background: "radial-gradient(55% 45% at 72% 42%, #f5c45122, transparent 70%), radial-gradient(45% 40% at 18% 85%, #4fd1e81a, transparent 70%), repeating-linear-gradient(0deg, #ffffff05 0 1px, transparent 1px 44px), repeating-linear-gradient(90deg, #ffffff05 0 1px, transparent 1px 44px)" }} />
       <div>
-        <p className="text-[13px] font-medium text-muted">Franchise partner selection, geo-allocation and onboarding</p>
-        <h1 className="serif mt-3 text-[40px] leading-[1.05] tracking-[-0.01em] md:text-[56px]">
-          Every application decided,
+        <p className="hud-label text-gold">Expansion command · franchise partner review</p>
+        <h1 className="hud mt-3 text-[40px] font-bold uppercase leading-[0.98] tracking-[0.01em] md:text-[62px]">
+          Every application decided.
           <br />
-          <em>and every decision explained.</em>
+          <span className="text-gold glow">Every decision explained.</span>
         </h1>
         <p className="mt-5 max-w-[52ch] text-[16px] leading-relaxed text-ink-2">
           Upload the applications and territories workbook. The desk checks each row, secures one store per pin code, ranks applicants for the slots that can really be filled, and drafts the next steps, training and first stock for partners who move forward. Then ask it anything in plain language.
@@ -39,7 +40,7 @@ export function EmptyState({ onFile, onSample, error, loading }: { onFile: (f: F
             const f = e.dataTransfer.files?.[0];
             if (f) onFile(f);
           }}
-          className={`group relative flex min-h-[260px] cursor-pointer flex-col items-center justify-center gap-3 rounded-[var(--radius-l)] border-2 border-dashed p-8 text-center transition-colors ${over ? "border-gold bg-surface-2" : "border-line-strong bg-surface hover:border-gold"}`}
+          className={`hud-panel group relative flex min-h-[280px] cursor-pointer flex-col items-center justify-center gap-3 border-2 border-dashed p-8 text-center transition-colors ${over ? "border-gold bg-surface-2" : "border-line-strong hover:border-gold"}`}
           style={{ boxShadow: "var(--shadow)" }}
         >
           <span className="grid size-12 place-items-center rounded-full bg-surface-2 text-gold transition-transform group-hover:-translate-y-0.5">
@@ -67,7 +68,7 @@ export function EmptyState({ onFile, onSample, error, loading }: { onFile: (f: F
         )}
         <div className="mt-4 flex flex-wrap items-center gap-3">
           <button type="button" onClick={onSample} disabled={loading} className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-[14px] font-semibold disabled:opacity-60" style={{ background: "var(--gold)", color: "var(--on-gold)" }}>
-            <Icon.Spark /> Try sample data
+            <Icon.Spark /> Launch with sample data
           </button>
           <span className="text-[12px] text-muted">SAMPLE DATA: 22 invented applicants, not real people.</span>
         </div>

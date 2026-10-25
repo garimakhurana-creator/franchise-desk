@@ -1,10 +1,11 @@
 import type { Metadata, Viewport } from "next";
-import { Schibsted_Grotesk, Newsreader, Noto_Sans_Kannada, Noto_Sans_Devanagari } from "next/font/google";
+import { Schibsted_Grotesk, Newsreader, Noto_Sans_Kannada, Noto_Sans_Devanagari, Chakra_Petch } from "next/font/google";
 import "./globals.css";
 
 const ui = Schibsted_Grotesk({ subsets: ["latin"], variable: "--font-ui", display: "swap" });
 const display = Newsreader({ subsets: ["latin"], variable: "--font-display", display: "swap", style: ["normal", "italic"] });
 const kannada = Noto_Sans_Kannada({ subsets: ["kannada"], variable: "--font-kannada", display: "swap", weight: ["400", "600"] });
+const game = Chakra_Petch({ subsets: ["latin"], variable: "--font-game", display: "swap", weight: ["500", "600", "700"] });
 const devanagari = Noto_Sans_Devanagari({ subsets: ["devanagari"], variable: "--font-devanagari", display: "swap", weight: ["400", "600"] });
 
 export const metadata: Metadata = {
@@ -16,17 +17,17 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#f3f1ea" },
-    { media: "(prefers-color-scheme: dark)", color: "#0d1b24" },
+    { media: "(prefers-color-scheme: light)", color: "#060a10" },
+    { media: "(prefers-color-scheme: dark)", color: "#060a10" },
   ],
 };
 
-// Applies a saved theme before paint. Storage is optional; failures fall back to the system theme.
-const themeInit = `try{var t=localStorage.getItem("fd-theme");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t}catch(e){}`;
+// The command centre is dark only.
+const themeInit = `document.documentElement.dataset.theme="dark"`;
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${ui.variable} ${display.variable} ${kannada.variable} ${devanagari.variable}`} suppressHydrationWarning>
+    <html lang="en" className={`${ui.variable} ${display.variable} ${kannada.variable} ${devanagari.variable} ${game.variable}`} data-theme="dark" suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeInit }} />
       </head>

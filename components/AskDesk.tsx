@@ -45,7 +45,7 @@ export const AskDesk = forwardRef<HTMLInputElement, { turns: Turn[]; busy: boole
   return (
     <div className={`no-print fixed bottom-0 left-0 z-30 transition-[right] duration-300 ${shifted ? "right-0 md:right-[min(560px,46vw)]" : "right-0"}`}>
       <div className="mx-auto max-w-[920px] px-3 pb-3">
-        <div className="rounded-[var(--radius-l)] border border-line bg-surface" style={{ boxShadow: "0 -8px 32px -18px #0007, var(--shadow)" }}>
+        <div className="hud-panel">
           {open && turns.length > 0 && (
             <div ref={log} className="max-h-[42vh] overflow-y-auto px-4 pt-3 scrollbar-thin" aria-live="polite" aria-label="Conversation with the desk">
               {turns.map((t, i) =>

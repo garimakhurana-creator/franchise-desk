@@ -16,7 +16,7 @@ mkdirSync(OUT, { recursive: true });
       page.on("console", (m) => m.type() === "error" && !/tile|Failed to load resource/i.test(m.text()) && console.log(vp.tag, scheme, "console:", m.text().slice(0, 160)));
       await page.goto(BASE, { waitUntil: "domcontentloaded" });
       await page.waitForSelector("body[data-ready]", { timeout: 60000 });
-      await page.getByRole("button", { name: "Try sample data" }).click();
+      await page.getByRole("button", { name: /sample data/i }).click();
       await page.waitForSelector("[data-key]:visible", { timeout: 60000 });
       await page.waitForTimeout(2900);
       await page.screenshot({ path: `${OUT}/terrain-${vp.tag}-${scheme}-1-india.png` });

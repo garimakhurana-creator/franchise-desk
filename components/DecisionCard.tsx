@@ -53,8 +53,8 @@ export function DecisionCard({
       ref={panel}
       tabIndex={-1}
       aria-label={`Decision for ${d.id}`}
-      className="rise fixed inset-x-0 bottom-0 top-[53px] z-40 overflow-y-auto border-l border-line bg-surface scrollbar-thin md:left-auto md:w-[min(560px,46vw)] focus:outline-none"
-      style={{ boxShadow: "var(--shadow)" }}
+      className="rise fixed inset-x-0 bottom-0 top-[53px] z-40 overflow-y-auto border-l-2 bg-surface scrollbar-thin md:left-auto md:w-[min(560px,46vw)] focus:outline-none"
+      style={{ boxShadow: "-30px 0 60px -30px #000, inset 1px 0 0 #ffffff08", borderColor: STATUS_VAR[d.status], background: "linear-gradient(180deg, #0e1622, #080d14)" }}
     >
       <div className="sticky top-0 z-10 flex items-center gap-2 border-b border-line bg-surface/95 px-5 py-3 backdrop-blur-[2px]">
         <span className="num text-[15px] font-semibold">{d.id}</span>
@@ -290,7 +290,7 @@ export function DecisionCard({
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className="mt-6 border-t border-line pt-4">
-      <h3 className="mb-2.5 text-[13px] font-semibold text-ink-2">{title}</h3>
+      <h3 className="hud-label mb-2.5 text-[11.5px] text-gold">{title}</h3>
       {children}
     </section>
   );

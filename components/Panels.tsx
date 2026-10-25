@@ -7,7 +7,7 @@ import type { Dataset } from "@/lib/engine/types";
 import { centroidSource } from "@/lib/engine/geo";
 import { Icon } from "./icons";
 
-export function Drawer({ open, title, onClose, children }: { open: boolean; title: string; onClose: () => void; children: React.ReactNode }) {
+export function Drawer({ open, title, onClose, children, wide }: { open: boolean; title: string; onClose: () => void; children: React.ReactNode; wide?: boolean }) {
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (open) ref.current?.focus();
@@ -16,7 +16,7 @@ export function Drawer({ open, title, onClose, children }: { open: boolean; titl
   return (
     <div className="fixed inset-0 z-50" role="dialog" aria-modal="true" aria-label={title}>
       <button type="button" className="absolute inset-0 bg-black/30" aria-label="Close" onClick={onClose} />
-      <div ref={ref} tabIndex={-1} className="rise absolute inset-y-0 right-0 w-full max-w-[560px] overflow-y-auto border-l border-line bg-surface focus:outline-none scrollbar-thin" style={{ boxShadow: "var(--shadow)" }}>
+      <div ref={ref} tabIndex={-1} className={`rise absolute inset-y-0 right-0 w-full ${wide ? "max-w-[1240px]" : "max-w-[560px]"} overflow-y-auto border-l border-line bg-surface focus:outline-none scrollbar-thin`} style={{ boxShadow: "var(--shadow)" }}>
         <div className="sticky top-0 z-10 flex items-center border-b border-line bg-surface px-5 py-3">
           <h2 className="text-[16px] font-semibold">{title}</h2>
           <button type="button" onClick={onClose} className="ml-auto grid size-8 place-items-center rounded-full hover:bg-surface-2" aria-label={`Close ${title}`}>

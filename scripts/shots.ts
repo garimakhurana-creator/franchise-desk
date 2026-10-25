@@ -10,13 +10,13 @@ mkdirSync(OUT, { recursive: true });
 async function loadSample(page: Page) {
   await page.goto(BASE, { waitUntil: "domcontentloaded" });
   await page.waitForSelector("body[data-ready]");
-  await page.getByRole("button", { name: "Try sample data" }).click();
+  await page.getByRole("button", { name: /sample data/i }).click();
   await page.waitForSelector("[data-key]:visible");
 }
 
 (async () => {
   const browser = await chromium.launch({ args: ["--use-angle=swiftshader", "--enable-unsafe-swiftshader"] });
-  for (const scheme of ["dark", "light"] as const) {
+  for (const scheme of ["dark"] as const) {
     for (const vp of [{ w: 1440, h: 900, tag: "desktop" }, { w: 390, h: 844, tag: "mobile" }]) {
       const ctx = await browser.newContext({ viewport: { width: vp.w, height: vp.h }, colorScheme: scheme, deviceScaleFactor: 1 });
       const page = await ctx.newPage();
