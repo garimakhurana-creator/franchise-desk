@@ -211,3 +211,121 @@ table td.num {
     display: block !important;
   }
 }
+
+/* ---------- Terrain map callouts: territories pop out like peak labels ---------- */
+.tm-callout {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  font-family: var(--font-sans);
+}
+.tm-callout > * {
+  animation: tm-rise 620ms var(--ease-out) both;
+  animation-delay: var(--d, 0s);
+}
+.tm-callout.no-pop > * {
+  animation: none;
+}
+.tm-tag {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 128px;
+  padding: 5px 9px 6px;
+  background: #fbfaf6;
+  color: #12191e;
+  border: 1px solid #c9c2b2;
+  border-radius: 2px;
+  box-shadow: 0 6px 18px -8px #000a;
+  text-align: left;
+  white-space: nowrap;
+  transform-origin: 50% 100%;
+  position: relative; /* left is set by the collision layout */
+}
+.tm-title {
+  font-size: 14px;
+  line-height: 1.15;
+}
+.tm-title b {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.tm-sub {
+  font-size: 11.5px;
+  color: #4a575d;
+  font-variant-numeric: tabular-nums;
+}
+.tm-req {
+  font-weight: 700;
+  color: #12191e;
+}
+.tm-bar {
+  display: flex;
+  gap: 1px;
+  height: 4px;
+  margin-top: 2px;
+  border-radius: 2px;
+  overflow: hidden;
+}
+.tm-bar i {
+  display: block;
+  height: 100%;
+}
+.tm-pole {
+  width: 1.5px;
+  height: 52px;
+  background: linear-gradient(#fbfaf6, #fbfaf6cc);
+  transform-origin: 50% 100%;
+}
+.tm-foot {
+  width: 7px;
+  height: 7px;
+  margin-top: -3px;
+  border-radius: 50%;
+  background: #fbfaf6;
+  box-shadow: 0 0 0 3px #fbfaf633;
+}
+.tm-callout:hover .tm-tag,
+.tm-callout:focus-visible .tm-tag {
+  border-color: #f2c14e;
+  box-shadow: 0 0 0 2px #f2c14e88, 0 8px 22px -8px #000c;
+}
+.tm-callout.is-active .tm-tag {
+  border-color: #b7861a;
+  box-shadow: 0 0 0 2px #f2c14e, 0 8px 22px -8px #000c;
+}
+.tm-callout.is-orphan .tm-tag {
+  background: #d9d6cf;
+  color: #3b4246;
+}
+.tm-callout.is-orphan .tm-pole,
+.tm-callout.is-orphan .tm-foot {
+  background: #d9d6cf;
+}
+@keyframes tm-rise {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scaleY(0.3);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.tm-legend {
+  background: #0b1820c4;
+  color: #efe9dd;
+  backdrop-filter: blur(2px);
+}
+.tm-pop .maplibregl-popup-content {
+  background: #fbfaf6;
+  color: #12191e;
+  border-radius: 3px;
+  font: 12px/1.35 var(--font-sans);
+  max-width: 280px;
+  padding: 6px 9px;
+}

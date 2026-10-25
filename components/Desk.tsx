@@ -310,6 +310,7 @@ export default function Desk() {
           <TerritoryRail result={result} active={terrFilter} onPick={(k) => setTerrFilter((cur) => (cur === k ? null : k))} />
           <section className="min-w-0 flex flex-col px-4 pb-40 lg:pb-36">
             {error && <p role="alert" className="mt-3 rounded-md border border-declined/40 px-3 py-2 text-sm text-declined">{error}</p>}
+            <MapStage result={result} selected={selected} highlight={highlight} onSelect={setSelected} theme={theme ?? "dark"} activeTerritory={terrFilter} onPickTerritory={setTerrFilter} />
             <SummaryStrip dataset={dataset} result={result} statusFilter={statusFilter} onStatus={setStatusFilter} onNotes={() => setPanel("notes")} />
             {notice && (
               <div className="rise mt-2 flex items-center gap-2 rounded-md bg-surface-2 px-3 py-2 text-[13px]" role="status">
@@ -318,7 +319,6 @@ export default function Desk() {
                 <button className="ml-auto text-muted hover:text-ink" onClick={() => setNotice(null)} aria-label="Dismiss notice"><Icon.Close size={14} /></button>
               </div>
             )}
-            <MapStage result={result} selected={selected} highlight={highlight} onSelect={setSelected} theme={theme ?? "dark"} />
             <ResultsTable
               decisions={result.decisions}
               selected={selected}
@@ -385,27 +385,26 @@ export default function Desk() {
   );
 }
 
-const ExpansionMap = dynamic(() => import("./map/ExpansionMap"), {
+const TerrainMap = dynamic(() => import("./map/TerrainMap"), {
   ssr: false,
   loading: () => <div className="grid h-full place-items-center text-[13px] text-muted">Loading the map…</div>,
 });
 
 /** The 3D map above the table. Optional by design: any failure hides it and the table carries everything. */
-function MapStage({ result, selected, highlight, onSelect, theme }: { result: RunResult; selected: string | null; highlight: string[]; onSelect: (k: string) => void; theme: "light" | "dark" }) {
+function MapStage({ result, selected, highlight, onSelect, theme, activeTerritory, onPickTerritory }: { result: RunResult; selected: string | null; highlight: string[]; onSelect: (k: string) => void; theme: "light" | "dark"; activeTerritory: string | null; onPickTerritory: (k: string | null) => void }) {
   const [show, setShow] = useState<boolean | null>(null);
   const [failed, setFailed] = useState<string | null>(null);
   const [reduced, setReduced] = useState(false);
   useEffect(() => {
     setReduced(window.matchMedia("(prefers-reduced-motion: reduce)").matches);
-    // Default on for wide screens; phones start with the table.
-    setShow(window.innerWidth >= 1024);
+    setShow(true);
   }, []);
   if (show === null) return null;
   return (
     <section className="mt-4" aria-label="Map of territories, stores and applications">
       <div className="mb-2 flex items-center gap-2 text-[13px]">
         <Icon.Map className="text-muted" />
-        <span className="font-medium text-ink-2">Expansion map</span>
+        <span className="font-medium text-ink-2">India, in relief: tap a territory to see its requests</span>
         {failed ? (
           <span className="text-muted">Map unavailable ({failed}). Everything is in the table below.</span>
         ) : (
@@ -415,8 +414,8 @@ function MapStage({ result, selected, highlight, onSelect, theme }: { result: Ru
         )}
       </div>
       {show && !failed && (
-        <div className="h-[min(52vh,520px)] overflow-hidden rounded-[var(--radius-l)] border border-line bg-surface-2" style={{ boxShadow: "var(--shadow)" }}>
-          <ExpansionMap result={result} selected={selected} highlight={highlight} onSelect={onSelect} theme={theme} reducedMotion={reduced} onFail={(r) => setFailed(r)} />
+        <div className="h-[min(56vh,460px)] overflow-hidden rounded-[var(--radius-l)] border border-line lg:h-[min(70vh,700px)]" style={{ boxShadow: "var(--shadow)", background: "linear-gradient(#2a2236, #0b1820)" }}>
+          <TerrainMap result={result} selected={selected} highlight={highlight} onSelect={onSelect} theme={theme} reducedMotion={reduced} onFail={(r) => setFailed(r)} activeTerritory={activeTerritory} onPickTerritory={onPickTerritory} />
         </div>
       )}
     </section>
