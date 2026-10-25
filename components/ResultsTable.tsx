@@ -165,7 +165,7 @@ export function ResultsTable({
       <ul className="mt-3 grid gap-2 md:grid-cols-2 xl:hidden">
         {rows.map((d) => (
           <li key={d.key} className="vrow">
-            <button type="button" onClick={() => onSelect(d.key)} className={`w-full rounded-[var(--radius-m)] border p-3 text-left ${d.key === selected ? "border-ink bg-surface-2" : highlight.includes(d.key) ? "border-gold bg-surface" : "border-line bg-surface"}`}>
+            <button type="button" data-key={d.key} data-status={d.status} onClick={() => onSelect(d.key)} className={`w-full rounded-[var(--radius-m)] border p-3 text-left ${d.key === selected ? "border-ink bg-surface-2" : highlight.includes(d.key) ? "border-gold bg-surface" : "border-line bg-surface"}`}>
               <div className="flex items-center gap-2">
                 <span className="num font-semibold">{d.id}</span>
                 <span className="truncate text-[13px] text-ink-2">{d.name}</span>

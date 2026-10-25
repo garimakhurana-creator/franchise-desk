@@ -20,9 +20,9 @@ export function TerritoryRail({ result, active, onPick }: { result: RunResult; a
               className={`w-[220px] lg:w-full rounded-[var(--radius-m)] border px-3 py-2.5 text-left transition-colors ${active === t.key ? "border-gold bg-surface-2" : "border-transparent hover:bg-surface-2"}`}
             >
               <div className="flex items-baseline gap-2">
-                <span className="text-[13px] font-semibold num">{t.id}</span>
+                <span className="text-[13px] font-semibold num whitespace-nowrap">{t.id}</span>
                 <span className="truncate text-[13px] text-ink-2">{t.city}</span>
-                <span className="ml-auto text-[11px] text-muted">{t.priority ?? "–"} · T{t.tier ?? "?"}</span>
+                <span className="ml-auto shrink-0 whitespace-nowrap text-[11px] text-muted">{t.priority ?? "–"} · T{t.tier ?? "?"}</span>
               </div>
               <SlotStrip t={t} />
               <div className="mt-1.5 text-[11.5px] text-muted leading-snug">

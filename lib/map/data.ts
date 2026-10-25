@@ -72,6 +72,7 @@ export interface StoneDatum {
   position: [number, number];
   order: number; // landing order: approved first
   locked: boolean;
+  labelLeft: boolean; // centre stone of a shared pin labels to the left
 }
 
 export interface BlockDatum {
@@ -133,9 +134,9 @@ export function buildMapData(result: RunResult) {
     ds.sort((a, b) => STATUS_ORDER[a.status] - STATUS_ORDER[b.status] || a.key.localeCompare(b.key));
     ds.forEach((d, i) => {
       // first stone sits on the pin; the rest on a ~350 m ring so they never hide each other
-      const r = i === 0 ? 0 : 0.0042;
+      const r = i === 0 ? 0 : 0.0075; // about 800 m, enough to keep labels apart when zoomed in
       const ang = (i / Math.max(1, ds.length - 1)) * Math.PI * 2;
-      stones.push({ key: d.key, id: d.id, status: d.status, why: d.why, pin, position: [lng + r * Math.cos(ang), lat + r * Math.sin(ang)], order: order.get(d.key) ?? 0, locked: d.pinned || d.status === "APPROVED" });
+      stones.push({ key: d.key, id: d.id, status: d.status, why: d.why, pin, position: [lng + r * Math.cos(ang), lat + r * Math.sin(ang)], order: order.get(d.key) ?? 0, locked: d.pinned || d.status === "APPROVED", labelLeft: ds.length > 1 && i === 0 });
     });
   }
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import dynamic from "next/dynamic";
 import { DEFAULT_POLICY } from "@/lib/engine/policy";
 import { newSession, replay, effectivePolicy, type Update } from "@/lib/engine/session";
 import { parseWorkbook, ParseError } from "@/lib/parse/parse";
@@ -8,7 +9,7 @@ import { readWorkbook, MAX_FILE_BYTES } from "@/lib/parse/xlsx";
 import { parseRules } from "@/lib/chat/rules";
 import { respond, replyText, type ChatState, type Reply } from "@/lib/chat/respond";
 import { ParsedSchema, type Parsed } from "@/lib/chat/commands";
-import type { Dataset, Status } from "@/lib/engine/types";
+import type { Dataset, RunResult, Status } from "@/lib/engine/types";
 import { Icon } from "./icons";
 import { EmptyState } from "./EmptyState";
 import { TerritoryRail } from "./TerritoryRail";
@@ -253,7 +254,7 @@ export default function Desk() {
   }, [panel, selected]);
 
   const selectedDecision = result?.decisions.find((d) => d.key === selected) ?? null;
-  const modeBadge = ai === "on" ? "AI-assisted when needed" : "Rule-based";
+  const modeBadge = ai === "on" ? "AI on standby" : "Rule-based";
 
   return (
     <div className="min-h-dvh flex flex-col">
@@ -264,9 +265,9 @@ export default function Desk() {
             <span className="text-[15px] font-semibold tracking-tight">Desk</span>
           </a>
           {result && dataset && (
-            <div className="hidden md:flex items-center gap-2 text-[12px] text-muted min-w-0">
+            <div className="hidden md:flex items-center gap-2 whitespace-nowrap text-[12px] text-muted min-w-0">
               {dataset.source === "sample" && <span className="rounded px-1.5 py-0.5 font-semibold text-[11px]" style={{ background: "var(--gold-soft)", color: "var(--gold)" }}>SAMPLE DATA</span>}
-              <span className="truncate max-w-[22ch]" title={dataset.fileName}>{dataset.fileName}</span>
+              {dataset.source !== "sample" && <span className="truncate max-w-[22ch]" title={dataset.fileName}>{dataset.fileName}</span>}
               <span aria-hidden>·</span>
               <span className="num" title="Run ID: a hash of the input, policy and date">run {result.runId}</span>
               <span aria-hidden>·</span>
@@ -275,7 +276,7 @@ export default function Desk() {
               <span title={ai === "on" ? "Questions are parsed by rules first; the model only helps with phrasing the rules do not understand. It never decides." : "Model unavailable or not configured: every answer comes from the rule-based parser."}>{modeBadge}</span>
             </div>
           )}
-          <nav className="ml-auto flex items-center gap-1" aria-label="Tools">
+          <nav className="ml-auto flex min-w-0 items-center gap-1 overflow-x-auto scrollbar-thin" aria-label="Tools">
             {result && (
               <>
                 <HeaderButton onClick={() => setPanel("tower")} icon={<Icon.Clock />} label="Control tower" />
@@ -317,6 +318,7 @@ export default function Desk() {
                 <button className="ml-auto text-muted hover:text-ink" onClick={() => setNotice(null)} aria-label="Dismiss notice"><Icon.Close size={14} /></button>
               </div>
             )}
+            <MapStage result={result} selected={selected} highlight={highlight} onSelect={setSelected} theme={theme ?? "dark"} />
             <ResultsTable
               decisions={result.decisions}
               selected={selected}
@@ -383,12 +385,50 @@ export default function Desk() {
   );
 }
 
+const ExpansionMap = dynamic(() => import("./map/ExpansionMap"), {
+  ssr: false,
+  loading: () => <div className="grid h-full place-items-center text-[13px] text-muted">Loading the map…</div>,
+});
+
+/** The 3D map above the table. Optional by design: any failure hides it and the table carries everything. */
+function MapStage({ result, selected, highlight, onSelect, theme }: { result: RunResult; selected: string | null; highlight: string[]; onSelect: (k: string) => void; theme: "light" | "dark" }) {
+  const [show, setShow] = useState<boolean | null>(null);
+  const [failed, setFailed] = useState<string | null>(null);
+  const [reduced, setReduced] = useState(false);
+  useEffect(() => {
+    setReduced(window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+    // Default on for wide screens; phones start with the table.
+    setShow(window.innerWidth >= 1024);
+  }, []);
+  if (show === null) return null;
+  return (
+    <section className="mt-4" aria-label="Map of territories, stores and applications">
+      <div className="mb-2 flex items-center gap-2 text-[13px]">
+        <Icon.Map className="text-muted" />
+        <span className="font-medium text-ink-2">Expansion map</span>
+        {failed ? (
+          <span className="text-muted">Map unavailable ({failed}). Everything is in the table below.</span>
+        ) : (
+          <button type="button" onClick={() => setShow((s) => !s)} className="ml-auto rounded-full px-2.5 py-1 text-muted hover:bg-surface-2 hover:text-ink" aria-expanded={!!show}>
+            {show ? "Hide map" : "Show map"}
+          </button>
+        )}
+      </div>
+      {show && !failed && (
+        <div className="h-[min(52vh,520px)] overflow-hidden rounded-[var(--radius-l)] border border-line bg-surface-2" style={{ boxShadow: "var(--shadow)" }}>
+          <ExpansionMap result={result} selected={selected} highlight={highlight} onSelect={onSelect} theme={theme} reducedMotion={reduced} onFail={(r) => setFailed(r)} />
+        </div>
+      )}
+    </section>
+  );
+}
+
 function HeaderButton({ onClick, icon, label }: { onClick: () => void; icon: React.ReactNode; label: string }) {
   return (
-    <button type="button" onClick={onClick} className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-[13px] text-ink-2 hover:bg-surface-2 hover:text-ink">
+    <button type="button" onClick={onClick} title={label} className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1.5 text-[13px] text-ink-2 hover:bg-surface-2 hover:text-ink">
       {icon}
-      <span className="hidden xl:inline">{label}</span>
-      <span className="sr-only xl:hidden">{label}</span>
+      <span className="hidden 2xl:inline">{label}</span>
+      <span className="sr-only 2xl:hidden">{label}</span>
     </button>
   );
 }

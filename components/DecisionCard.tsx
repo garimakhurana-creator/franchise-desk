@@ -107,7 +107,7 @@ export function DecisionCard({
                 <Fact k="Usable capacity">
                   <span className="num">{terr.effectiveCapacity}</span> = min({terr.slots} slots, {terr.freePins.length} free pins)
                 </Fact>
-                <Fact k="Free pins">{terr.freePins.join(", ") || "none"}</Fact>
+                <Fact k="Pins without our store">{terr.freePins.length ? terr.freePins.map((p) => { const holder = step.result.decisions.find((x) => x.allocatedPin === p); return holder ? `${p} (${holder.id})` : `${p} open`; }).join(", ") : "none"}</Fact>
               </>
             )}
             {d.rank && <Fact k={d.status === "ON_HOLD" ? "Rank if fixed" : "Rank"}><span className="num">{d.rank.k} of {d.rank.n}</span></Fact>}
