@@ -7,16 +7,26 @@ export function EmptyState({ onFile, onSample, error, loading }: { onFile: (f: F
   const [over, setOver] = useState(false);
   const input = useRef<HTMLInputElement>(null);
   return (
-    <main className="relative isolate mx-auto grid w-full max-w-[1240px] flex-1 grid-cols-1 items-center gap-10 px-4 py-10 md:grid-cols-[1.1fr_0.9fr] md:py-16">
+    <main className="relative isolate mx-auto grid w-full max-w-[1240px] flex-1 grid-cols-1 items-center gap-8 px-4 py-6 md:grid-cols-[1.1fr_0.9fr] md:gap-10 md:py-16">
       <div aria-hidden className="pointer-events-none fixed inset-0 -z-10" style={{ background: "radial-gradient(55% 45% at 72% 42%, #f5c45122, transparent 70%), radial-gradient(45% 40% at 18% 85%, #4fd1e81a, transparent 70%), repeating-linear-gradient(0deg, #ffffff05 0 1px, transparent 1px 44px), repeating-linear-gradient(90deg, #ffffff05 0 1px, transparent 1px 44px)" }} />
       <div>
         <p className="hud-label text-gold">Expansion command · franchise partner review</p>
-        <h1 className="hud mt-3 text-[40px] font-bold uppercase leading-[0.98] tracking-[0.01em] md:text-[62px]">
+        <h1 className="hud mt-3 text-[32px] font-bold uppercase leading-[0.98] tracking-[0.01em] sm:text-[40px] md:text-[62px]">
           Every application decided.
           <br />
           <span className="text-gold glow">Every decision explained.</span>
         </h1>
-        <p className="mt-5 max-w-[52ch] text-[16px] leading-relaxed text-ink-2">
+        {/* The primary action sits right under the headline so it is on the first screen at every size */}
+        <div className="mt-5 flex flex-wrap items-center gap-3">
+          <button type="button" onClick={onSample} disabled={loading} className="inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-[15px] font-bold disabled:opacity-60" style={{ background: "var(--gold)", color: "var(--on-gold)", boxShadow: "0 0 28px -6px #f5c451aa" }}>
+            <Icon.Spark /> {loading ? "Loading…" : "Launch with sample data"}
+          </button>
+          <label htmlFor="file" className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-line-strong px-4 py-2.5 text-[14px] font-semibold text-ink hover:border-gold">
+            <Icon.Upload /> Upload your file
+          </label>
+        </div>
+        <p className="mt-2 text-[12px] text-muted">SAMPLE DATA: 22 invented applicants, not real people.</p>
+        <p className="mt-5 max-w-[52ch] text-[15px] leading-relaxed text-ink-2 md:text-[16px]">
           Upload the applications and territories workbook. The desk checks each row, secures one store per pin code, ranks applicants for the slots that can really be filled, and drafts the next steps, training and first stock for partners who move forward. Then ask it anything in plain language.
         </p>
         <ul className="mt-6 grid max-w-[52ch] gap-2.5 text-[14px] text-ink-2">
@@ -66,12 +76,6 @@ export function EmptyState({ onFile, onSample, error, loading }: { onFile: (f: F
             {error}
           </p>
         )}
-        <div className="mt-4 flex flex-wrap items-center gap-3">
-          <button type="button" onClick={onSample} disabled={loading} className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-[14px] font-semibold disabled:opacity-60" style={{ background: "var(--gold)", color: "var(--on-gold)" }}>
-            <Icon.Spark /> Launch with sample data
-          </button>
-          <span className="text-[12px] text-muted">SAMPLE DATA: 22 invented applicants, not real people.</span>
-        </div>
         <p className="mt-6 text-[12px] leading-relaxed text-muted">
           Works without an account, without the AI model and even if the server is asleep: parsing, decisions and the rule-based desk all run in your browser.
         </p>

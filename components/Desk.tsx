@@ -290,6 +290,11 @@ export default function Desk() {
               </>
             )}
             {!result && <HeaderButton onClick={() => setPanel("method")} icon={<Icon.Book />} label="How it decides" />}
+            {!result && (
+              <button type="button" onClick={onSample} disabled={loading} className="hud ml-1 inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1.5 text-[12.5px] font-bold disabled:opacity-60" style={{ background: "var(--gold)", color: "var(--on-gold)" }}>
+                <Icon.Spark size={14} /> Load sample
+              </button>
+            )}
           </nav>
         </div>
       </header>
