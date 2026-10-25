@@ -295,17 +295,12 @@ export default function Desk() {
               </>
             )}
             {!result && <HeaderButton onClick={() => setPanel("method")} icon={<Icon.Book />} label="How it decides" />}
-            {!result && (
-              <button type="button" onClick={() => onSample()} disabled={loading} className="hud ml-1 inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1.5 text-[12.5px] font-bold disabled:opacity-60" style={{ background: "var(--neon)", color: "var(--on-neon)" }}>
-                <Icon.Spark size={14} /> Load sample
-              </button>
-            )}
           </nav>
         </div>
       </header>
 
       {!result || !dataset || !steps ? (
-        <EmptyState onFile={onFile} onSample={onSample} error={error} loading={loading} />
+        <EmptyState onFile={onFile} onSample={() => onSample()} error={error} loading={loading} />
       ) : (
         <main className="grid flex-1 grid-cols-1 lg:flex-none lg:h-[calc(100dvh-53px)] lg:grid-cols-[400px_minmax(0,1fr)] lg:grid-rows-[minmax(0,1fr)] lg:overflow-hidden">
           <div className="order-2 h-[70vh] min-h-0 lg:order-1 lg:h-full lg:overflow-hidden">
