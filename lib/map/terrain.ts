@@ -106,7 +106,7 @@ export function buildTerrainData(result: RunResult) {
     discs.push(circle(p, 2));
   }
 
-  // Contested outcomes: a dashed gold arc from the challenger to the approved partner.
+  // Contested outcomes: a dashed neon arc from the challenger to the approved partner.
   const arcs: GeoJSON.Feature<GeoJSON.LineString>[] = [];
   for (const d of result.decisions) {
     if (!d.contested) continue;
@@ -168,10 +168,12 @@ export interface MapPoint {
   place: string;
   lngLat: [number, number];
   muted?: boolean;
+  /** New requests in this place, shown on its pin. */
+  count?: number;
 }
 
 export function territoryPoints(result: RunResult): MapPoint[] {
-  return buildTerrainData(result).callouts.map((c) => ({ key: c.key, title: c.title, place: c.noTerritory ? `${c.place}` : c.place, lngLat: c.lngLat, muted: c.noTerritory }));
+  return buildTerrainData(result).callouts.map((c) => ({ key: c.key, title: c.title, place: c.noTerritory ? `${c.place}` : c.place, lngLat: c.lngLat, muted: c.noTerritory, count: c.requests }));
 }
 
 /** Before any upload: the expansion cities from the case template, so the first page already shows where the brand operates. */

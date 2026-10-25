@@ -16,6 +16,8 @@ export interface DioramaProps {
   reducedMotion: boolean;
   onFail: (reason: string) => void;
   hint?: string;
+  /** Slowly swing the view around India while nobody is touching it. */
+  autoRotate?: boolean;
 }
 
 interface Meta {
@@ -57,12 +59,12 @@ function mercY(lat: number, z: number) {
   return (0.5 - Math.log((1 + s) / (1 - s)) / (4 * Math.PI)) * 2 ** z * 256;
 }
 
-export default function Diorama({ points, activeKey, onPick, reducedMotion, onFail, hint }: DioramaProps) {
+export default function Diorama({ points, activeKey, onPick, reducedMotion, onFail, hint, autoRotate }: DioramaProps) {
   const host = useRef<HTMLDivElement>(null);
   const tagLayer = useRef<HTMLDivElement>(null);
   const lineLayer = useRef<SVGSVGElement>(null);
-  const latest = useRef({ points, onPick, onFail, activeKey });
-  latest.current = { points, onPick, onFail, activeKey };
+  const latest = useRef({ points, onPick, onFail, activeKey, autoRotate });
+  latest.current = { points, onPick, onFail, activeKey, autoRotate };
   const api = useRef<{ setCallouts: (c: MapPoint[]) => void; setActive: (k: string | null | undefined) => void } | null>(null);
 
   useEffect(() => {
@@ -222,7 +224,7 @@ export default function Diorama({ points, activeKey, onPick, reducedMotion, onFa
         let dirty = true; // redraw on the next frame
 
         // ---- pins and tags ----
-        type Pin = { c: MapPoint; anchor: THREE.Vector3; el: HTMLButtonElement; line: SVGLineElement; foot: SVGCircleElement };
+        type Pin = { last?: { L: number; flip: boolean }; c: MapPoint; anchor: THREE.Vector3; el: HTMLButtonElement; line: SVGLineElement; foot: SVGCircleElement };
         const SVG = "http://www.w3.org/2000/svg";
         let pins: Pin[] = [];
         const anchorFor = (lng: number, lat: number) => {
@@ -230,8 +232,6 @@ export default function Diorama({ points, activeKey, onPick, reducedMotion, onFa
           const py = ((mercY(lat, meta.zoom) - meta.mercPx[1]) / (meta.mercPx[3] - meta.mercPx[1])) * H;
           return toWorld(px, py, elev(Math.round(px), Math.round(py)) + 120);
         };
-        const pinGeo = new THREE.CylinderGeometry(0.012, 0.012, 0.16, 8);
-        const pinMat = new THREE.MeshBasicMaterial({ color: "#f5c451" });
         const pinGroup = new THREE.Group();
         scene.add(pinGroup);
         const setCallouts = (callouts: MapPoint[]) => {
@@ -243,29 +243,27 @@ export default function Diorama({ points, activeKey, onPick, reducedMotion, onFa
           pinGroup.clear();
           pins = callouts.map((c, i) => {
             const anchor = anchorFor(c.lngLat[0], c.lngLat[1]);
-            const stick = new THREE.Mesh(pinGeo, pinMat);
-            stick.position.copy(anchor).add(new THREE.Vector3(0, 0.08, 0));
-            pinGroup.add(stick);
             const b = document.createElement("button");
             b.type = "button";
-            // the tag itself is the button; its leader line is drawn in the SVG layer underneath all tags
-            b.className = `tm-tag dio-tag${c.muted ? " is-orphan" : ""}${latest.current.activeKey === c.key ? " is-active" : ""}`;
+            // a neon map pin (with the request count when there is one) and a glass name label; the tip sits on the place
+            b.className = `dio-tag${c.muted ? " is-orphan" : ""}${latest.current.activeKey === c.key ? " is-active" : ""}`;
             b.dataset.key = c.key;
             b.style.position = "absolute";
             b.style.left = "0";
             b.style.top = "0";
             b.style.setProperty("--d", `${reducedMotion ? 0 : 1.2 + i * 0.12}s`);
-            b.setAttribute("aria-label", `${c.title}, ${c.place}. Open`);
-            b.innerHTML = `<span class="tm-title"><b>${escapeHtml(c.title)}</b> ${escapeHtml(c.place)}</span>`;
+            b.setAttribute("aria-label", `${c.title}, ${c.place}${c.count !== undefined ? `: ${c.count} new request${c.count === 1 ? "" : "s"}` : ""}. Open`);
+            b.innerHTML = `<span class="dp-pin"><span class="dp-head"><span class="dp-num">${c.count !== undefined ? c.count : ""}</span></span><span class="dp-pulse"></span></span><span class="dp-name"><b>${escapeHtml(c.title)}</b> ${escapeHtml(c.place)}</span>`;
             b.addEventListener("click", () => latest.current.onPick(c.key));
             layer.appendChild(b);
             const line = document.createElementNS(SVG, "line");
-            line.setAttribute("stroke", c.muted ? "#d9d6cf" : "#fbfaf6");
+            line.setAttribute("stroke", c.muted ? "#8e8ea6" : "#b4a6ff");
             line.setAttribute("stroke-width", "1.5");
-            line.setAttribute("opacity", "0.9");
+            line.setAttribute("stroke-dasharray", "2 3");
+            line.setAttribute("opacity", "0.85");
             const foot = document.createElementNS(SVG, "circle");
-            foot.setAttribute("r", "3.5");
-            foot.setAttribute("fill", c.muted ? "#d9d6cf" : "#fbfaf6");
+            foot.setAttribute("r", "2.5");
+            foot.setAttribute("fill", c.muted ? "#8e8ea6" : "#c9bfff");
             lines.appendChild(line);
             lines.appendChild(foot);
             return { c, anchor, el: b, line, foot };
@@ -283,7 +281,7 @@ export default function Diorama({ points, activeKey, onPick, reducedMotion, onFa
           const h = el.clientHeight;
           const items = pins
             .map((p) => {
-              v.copy(p.anchor).add(new THREE.Vector3(0, 0.16, 0)).project(camera);
+              v.copy(p.anchor).add(new THREE.Vector3(0, 0.01, 0)).project(camera);
               return { p, x: (v.x * 0.5 + 0.5) * w, y: (-v.y * 0.5 + 0.5) * h, behind: v.z > 1 };
             })
             .sort((a, b) => b.y - a.y);
@@ -296,25 +294,44 @@ export default function Diorama({ points, activeKey, onPick, reducedMotion, onFa
             it.p.foot.style.display = hidden ? "none" : "";
             const tw = tag.offsetWidth;
             const th = tag.offsetHeight;
-            let best = { L: 36, dx: 0 };
-            outer: for (const L of [36, 74, 112, 150, 188, 226, 264]) {
-              for (const dx of [0, -0.6 * tw, 0.6 * tw, -1.1 * tw, 1.1 * tw, -1.6 * tw, 1.6 * tw]) {
-                const r = { x: it.x - tw / 2 + dx - 4, y: it.y - L - th - 10, w: tw + 8, h: th + 6 };
-                if (r.y < 6 || r.x < 4 || r.x + r.w > w - 4) continue;
-                if (!placed.some((q) => r.x < q.x + q.w && r.x + r.w > q.x && r.y < q.y + q.h && r.y + r.h > q.y)) {
-                  best = { L, dx };
-                  placed.push(r);
-                  break outer;
-                }
+            const P = 30; // pin width; its tip is at the bottom centre
+            const leftOf = (flip: boolean) => (flip ? it.x - tw + P / 2 : it.x - P / 2);
+            let best = { L: 0, flip: false };
+            const tries: { L: number; flip: boolean }[] = [];
+            if (it.p.last) tries.push({ L: it.p.last.L, flip: it.p.last.flip });
+            for (const L of [0, 22, 44, 68, 94, 122, 152]) for (const flip of [false, true]) tries.push({ L, flip });
+            // first spot that overlaps nothing; failing that, the one that overlaps least
+            let bestScore = Infinity;
+            let bestRect: { x: number; y: number; w: number; h: number } | null = null;
+            for (const t of tries) {
+              const r = { x: leftOf(t.flip) - 2, y: it.y - t.L - th - 2, w: tw + 4, h: th + 2 };
+              if (r.y < 6) continue;
+              let score = (r.x < 4 ? 4 - r.x : 0) * 50 + (r.x + r.w > w - 4 ? r.x + r.w - w + 4 : 0) * 50 + t.L * 0.5;
+              for (const q of placed) {
+                const ox = Math.min(r.x + r.w, q.x + q.w) - Math.max(r.x, q.x);
+                const oy = Math.min(r.y + r.h, q.y + q.h) - Math.max(r.y, q.y);
+                if (ox > 0 && oy > 0) score += ox * oy;
               }
+              if (score < bestScore) {
+                bestScore = score;
+                best = t;
+                bestRect = r;
+              }
+              if (score === t.L * 0.5) break;
             }
-            const tx = Math.round(it.x + best.dx - tw / 2);
+            if (bestRect) placed.push(bestRect);
+            it.p.last = best;
+            tag.classList.toggle("flip", best.flip);
+            const tx = Math.round(leftOf(best.flip));
             const ty = Math.round(it.y - best.L - th);
             tag.style.transform = `translate(${tx}px, ${ty}px)`;
+            // a short dotted stem only when the pin had to rise above a neighbour
+            it.p.line.style.display = hidden || !best.L ? "none" : "";
+            it.p.foot.style.display = hidden || !best.L ? "none" : "";
             it.p.line.setAttribute("x1", String(it.x));
             it.p.line.setAttribute("y1", String(it.y));
-            it.p.line.setAttribute("x2", String(it.x + best.dx));
-            it.p.line.setAttribute("y2", String(ty + th));
+            it.p.line.setAttribute("x2", String(it.x));
+            it.p.line.setAttribute("y2", String(it.y - best.L));
             it.p.foot.setAttribute("cx", String(it.x));
             it.p.foot.setAttribute("cy", String(it.y));
           }
@@ -335,12 +352,36 @@ export default function Diorama({ points, activeKey, onPick, reducedMotion, onFa
         ro.observe(el);
         cleanups.push(() => ro.disconnect());
         let lastLayout = 0;
+        const sph = new THREE.Spherical();
+        const off = new THREE.Vector3();
+        let baseTheta: number | null = null;
+        let swingT = 0;
+        let idleSince = 0;
+        let touching = false;
+        controls.addEventListener("start", () => {
+          touching = true;
+        });
+        controls.addEventListener("end", () => {
+          touching = false;
+          idleSince = performance.now();
+          baseTheta = null;
+        });
         const loop = (t: number) => {
           raf = requestAnimationFrame(loop);
           if (introT < 1) {
             introT = Math.min(1, introT + 1 / 150); // about 2.5 s settle
             const k = 1 - Math.pow(1 - introT, 3);
             camera.position.lerpVectors(start, endPos, k);
+            camera.lookAt(controls.target);
+            dirty = true;
+          }
+          if (latest.current.autoRotate && !reducedMotion && introT >= 1 && !touching && t - idleSince > 4000) {
+            off.copy(camera.position).sub(controls.target);
+            sph.setFromVector3(off);
+            if (baseTheta === null) baseTheta = sph.theta - 0.42 * Math.sin(swingT);
+            swingT += (2 * Math.PI) / (40 * 60);
+            sph.theta = baseTheta + 0.42 * Math.sin(swingT);
+            camera.position.copy(controls.target).add(off.setFromSpherical(sph));
             camera.lookAt(controls.target);
             dirty = true;
           }

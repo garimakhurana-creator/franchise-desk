@@ -99,7 +99,7 @@ export function PolicyPanel({ policy, onApply, disabled }: { policy: Policy; onA
                   });
                 }}
                 className="rounded-md px-2.5 py-1 text-[12.5px] font-semibold disabled:opacity-30"
-                style={{ background: changed ? "var(--gold)" : "transparent", color: changed ? "var(--on-gold)" : "var(--muted)" }}
+                style={{ background: changed ? "var(--neon)" : "transparent", color: changed ? "var(--on-neon)" : "var(--muted)" }}
               >
                 Re-run
               </button>

@@ -24,7 +24,7 @@ export function SelfTestPanel({ run }: { run: () => Check[] }) {
           }, 30);
         }}
         className="mt-3 inline-flex items-center gap-2 rounded-full px-4 py-2 text-[14px] font-semibold disabled:opacity-60"
-        style={{ background: "var(--gold)", color: "var(--on-gold)" }}
+        style={{ background: "var(--neon)", color: "var(--on-neon)" }}
       >
         <Icon.Shield /> {busy ? "Running…" : checks ? "Run again" : "Run self-test"}
       </button>
@@ -83,7 +83,7 @@ export function TowerPanel({ tower, onSelect, onSimulate }: { tower: Tower; onSe
             <li key={o.month} className="grid grid-cols-[72px_1fr_44px] items-center gap-2">
               <span className="text-ink-2">{o.month}</span>
               <span className="relative h-3 rounded-full bg-surface-3" aria-hidden>
-                <span className="absolute inset-y-0 left-0 rounded-full" style={{ width: `${(o.expected / maxOpen) * 100}%`, background: "var(--gold)" }} />
+                <span className="absolute inset-y-0 left-0 rounded-full" style={{ width: `${(o.expected / maxOpen) * 100}%`, background: "var(--neon)" }} />
               </span>
               <span className="num text-right">{o.expected}</span>
               <span className="col-span-3 -mt-1 text-[11.5px] text-muted">{o.ids.join(", ")}</span>

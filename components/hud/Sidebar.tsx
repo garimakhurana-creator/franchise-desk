@@ -54,10 +54,10 @@ export function Sidebar({
   const counts = Object.fromEntries(ORDER.map((s) => [s, decisions.filter((d) => d.status === s).length])) as Record<Status, number>;
 
   return (
-    <aside className="flex h-full min-h-0 flex-col border-line bg-[#080e16] lg:border-r" aria-label="Applications and territories">
+    <aside className="flex h-full min-h-0 flex-col border-line bg-[#0a0a10] lg:border-r" aria-label="Applications and territories">
       <div className="flex items-center gap-1 border-b border-line px-3 pt-2" role="tablist">
         {([["apps", `Applications`, decisions.length], ["territories", `Territories`, result.territories.length]] as const).map(([k, label, n]) => (
-          <button key={k} type="button" role="tab" aria-selected={tab === k} onClick={() => setTab(k)} className={`-mb-px border-b-2 px-2.5 py-2 text-[13px] font-medium transition-colors ${tab === k ? "border-gold text-ink" : "border-transparent text-muted hover:text-ink"}`}>
+          <button key={k} type="button" role="tab" aria-selected={tab === k} onClick={() => setTab(k)} className={`-mb-px border-b-2 px-2.5 py-2 text-[13px] font-medium transition-colors ${tab === k ? "border-neon text-ink" : "border-transparent text-muted hover:text-ink"}`}>
             {label} <span className="num ml-0.5 text-muted">{n}</span>
           </button>
         ))}
@@ -92,7 +92,7 @@ export function Sidebar({
                 );
               })}
               {terrName && (
-                <button type="button" onClick={() => onPickTerritory(null)} className="inline-flex items-center gap-1 rounded-full border border-gold/60 px-2 py-0.5 text-[12px] text-gold">
+                <button type="button" onClick={() => onPickTerritory(null)} className="inline-flex items-center gap-1 rounded-full border border-neon/60 px-2 py-0.5 text-[12px] text-neon">
                   {terrName} <Icon.Close size={11} />
                 </button>
               )}
@@ -121,7 +121,7 @@ export function Sidebar({
             const on = terrFilter === t.key;
             return (
               <li key={t.key}>
-                <button type="button" onClick={() => onPickTerritory(on ? null : t.key)} aria-pressed={on} className={`w-full rounded-lg border px-3 py-2.5 text-left transition-colors ${on ? "border-gold/70 bg-surface-2" : "border-transparent hover:bg-surface"}`}>
+                <button type="button" onClick={() => onPickTerritory(on ? null : t.key)} aria-pressed={on} className={`w-full rounded-lg border px-3 py-2.5 text-left transition-colors ${on ? "border-neon/70 bg-surface-2" : "border-transparent hover:bg-surface"}`}>
                   <div className="flex items-baseline gap-2">
                     <span className="num whitespace-nowrap text-[13.5px] font-semibold">{t.id}</span>
                     <span className="truncate text-[13px] text-ink-2">{t.city}</span>
@@ -160,7 +160,7 @@ function AppRow({ d, selected, highlighted, onSelect }: { d: Decision; selected:
         data-status={d.status}
         onClick={() => onSelect(d.key)}
         className={`w-full border-b border-line/60 px-3 py-2.5 text-left transition-colors ${selected ? "bg-surface-2" : highlighted ? "bg-surface" : "hover:bg-surface"}`}
-        style={{ boxShadow: selected ? `inset 3px 0 0 ${STATUS_VAR[d.status]}` : highlighted ? "inset 3px 0 0 var(--gold)" : undefined }}
+        style={{ boxShadow: selected ? `inset 3px 0 0 ${STATUS_VAR[d.status]}` : highlighted ? "inset 3px 0 0 var(--neon)" : undefined }}
       >
         <div className="flex items-center gap-2">
           <span className="num text-[13px] font-semibold">{d.id}</span>

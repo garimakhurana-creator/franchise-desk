@@ -141,7 +141,7 @@ export function ResultsTable({
                   onKeyDown={(e) => e.key === "Enter" && onSelect(d.key)}
                   aria-selected={isSel}
                   className={`vrow cursor-pointer align-top transition-colors [&>td]:border-t [&>td]:border-line ${isSel ? "bg-surface-3" : isHi ? "bg-surface-2" : "hover:bg-surface-2"}`}
-                  style={isHi && !isSel ? { boxShadow: "inset 3px 0 0 var(--gold)" } : isSel ? { boxShadow: "inset 3px 0 0 var(--ink)" } : undefined}
+                  style={isHi && !isSel ? { boxShadow: "inset 3px 0 0 var(--neon)" } : isSel ? { boxShadow: "inset 3px 0 0 var(--ink)" } : undefined}
                 >
                   <td className="num px-3 py-2.5 font-semibold whitespace-nowrap">{d.id}</td>
                   <td className="px-3 py-2.5 truncate" title={d.name}>{d.name || <span className="text-muted">–</span>}</td>
@@ -165,7 +165,7 @@ export function ResultsTable({
       <ul className="mt-3 grid gap-2 md:grid-cols-2 xl:hidden">
         {rows.map((d) => (
           <li key={d.key} className="vrow">
-            <button type="button" data-key={d.key} data-status={d.status} onClick={() => onSelect(d.key)} className={`w-full rounded-[var(--radius-m)] border p-3 text-left ${d.key === selected ? "border-ink bg-surface-2" : highlight.includes(d.key) ? "border-gold bg-surface" : "border-line bg-surface"}`}>
+            <button type="button" data-key={d.key} data-status={d.status} onClick={() => onSelect(d.key)} className={`w-full rounded-[var(--radius-m)] border p-3 text-left ${d.key === selected ? "border-ink bg-surface-2" : highlight.includes(d.key) ? "border-neon bg-surface" : "border-line bg-surface"}`}>
               <div className="flex items-center gap-2">
                 <span className="num font-semibold">{d.id}</span>
                 <span className="truncate text-[13px] text-ink-2">{d.name}</span>

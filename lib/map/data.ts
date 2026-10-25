@@ -14,7 +14,7 @@ export interface Palette {
   focusEdge: string;
   text: string;
   muted: string;
-  gold: RGBA;
+  neon: RGBA;
   store: RGBA;
   storeDisc: RGBA;
   status: Record<Status, RGBA>;
@@ -33,11 +33,11 @@ export const PALETTE: Record<"light" | "dark", Palette> = {
     focusEdge: "#4d7b8c",
     text: "#efe9dd",
     muted: "#9fb1b8",
-    gold: hex("#f2c14e"),
+    neon: hex("#8f7cff"),
     store: hex("#8fa3ab"),
     storeDisc: hex("#9fb1b8", 26),
-    status: { APPROVED: hex("#2fbf8f"), CONDITIONAL: hex("#4fc3d9"), ON_HOLD: hex("#e39a3b"), WAITLISTED: hex("#9aa6d3"), DECLINED: hex("#e2685f"), WITHDRAWN: hex("#8a989e") },
-    arc: hex("#f2c14e", 230),
+    status: { APPROVED: hex("#2fbf8f"), CONDITIONAL: hex("#b5e655"), ON_HOLD: hex("#e39a3b"), WAITLISTED: hex("#9aa3b2"), DECLINED: hex("#e2685f"), WITHDRAWN: hex("#8a989e") },
+    arc: hex("#8f7cff", 230),
   },
   light: {
     bg: "#e6e1d4",
@@ -48,7 +48,7 @@ export const PALETTE: Record<"light" | "dark", Palette> = {
     focusEdge: "#8f846c",
     text: "#16232a",
     muted: "#5a6a70",
-    gold: hex("#b07d0c"),
+    neon: hex("#6d5cf0"),
     store: hex("#5f6d73"),
     storeDisc: hex("#5f6d73", 26),
     status: { APPROVED: hex("#17805d"), CONDITIONAL: hex("#16788f"), ON_HOLD: hex("#a35f0c"), WAITLISTED: hex("#52609a"), DECLINED: hex("#ad332b"), WITHDRAWN: hex("#5f6d73") },
@@ -162,7 +162,7 @@ export function buildMapData(result: RunResult) {
   // labels: put a label on the left when another tower sits close by to its east
   for (const l of labels) if (labels.some((o) => o !== l && Math.abs(o.position[1] - l.position[1]) < 0.9 && o.position[0] > l.position[0] && o.position[0] - l.position[0] < 1.6)) l.anchor = "end";
 
-  // Contested outcomes: a gold arc from the challenger to the approved partner it outranks.
+  // Contested outcomes: a neon arc from the challenger to the approved partner it outranks.
   const arcs: ArcDatum[] = [];
   for (const d of result.decisions) {
     if (!d.contested) continue;

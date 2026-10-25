@@ -21,7 +21,8 @@ import { HudStats } from "./hud/HudStats";
 import { Sidebar } from "./hud/Sidebar";
 import { buildTerrainData, territoryPoints } from "@/lib/map/terrain";
 import { centroid } from "@/lib/engine/geo";
-import { RequestsPanel, LocationPanel } from "./map/TerritoryPanels";
+import { RequestsPanel, LocationPanel, territoryRequests } from "./map/TerritoryPanels";
+import { territoryOverlay } from "@/lib/map/pinAreas";
 import { selfTest } from "@/lib/engine/selftest";
 import { controlTower } from "@/lib/engine/tower";
 
@@ -117,13 +118,15 @@ export default function Desk() {
     [loadBuffer],
   );
 
-  const onSample = useCallback(async () => {
+  const [openRequest, setOpenRequest] = useState<string | null>(null);
+  const onSample = useCallback(async (open?: string) => {
     setLoading(true);
     setError(null);
     try {
       const r = await fetch("/sample/sample-golden.xlsx");
       if (!r.ok) throw new Error("sample missing");
       loadBuffer(await r.arrayBuffer(), "SAMPLE DATA (invented test fixture)", "sample");
+      setOpenRequest(open ?? null);
     } catch {
       setError("The sample file could not be loaded. You can still upload your own file.");
     } finally {
@@ -248,10 +251,10 @@ export default function Desk() {
 
   return (
     <div className="min-h-dvh flex flex-col">
-      <header className="sticky top-0 z-30 border-b border-line bg-[#080e16]">
+      <header className="sticky top-0 z-30 border-b border-line bg-[#0a0a10]">
         <div className="mx-auto flex max-w-[1800px] items-center gap-3 px-4 py-2">
           <a href="/" className="flex shrink-0 items-center gap-2.5" aria-label="Franchise Desk home">
-            <span className="grid size-8 place-items-center rounded-md" style={{ background: "var(--gold)", color: "var(--on-gold)" }} aria-hidden>
+            <span className="grid size-8 place-items-center rounded-md" style={{ background: "var(--neon)", color: "var(--on-neon)" }} aria-hidden>
               <Icon.Store size={16} />
             </span>
             <span className="flex flex-col leading-tight">
@@ -293,7 +296,7 @@ export default function Desk() {
             )}
             {!result && <HeaderButton onClick={() => setPanel("method")} icon={<Icon.Book />} label="How it decides" />}
             {!result && (
-              <button type="button" onClick={onSample} disabled={loading} className="hud ml-1 inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1.5 text-[12.5px] font-bold disabled:opacity-60" style={{ background: "var(--gold)", color: "var(--on-gold)" }}>
+              <button type="button" onClick={() => onSample()} disabled={loading} className="hud ml-1 inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1.5 text-[12.5px] font-bold disabled:opacity-60" style={{ background: "var(--neon)", color: "var(--on-neon)" }}>
                 <Icon.Spark size={14} /> Load sample
               </button>
             )}
@@ -321,11 +324,11 @@ export default function Desk() {
           <section className="order-1 flex min-h-0 min-w-0 flex-col lg:order-2">
             <HudStats result={result} dataset={dataset} statusFilter={statusFilter} onStatus={setStatusFilter} onNotes={() => setPanel("notes")} />
             {error && <p role="alert" className="px-4 py-2 text-[13px] text-declined">{error}</p>}
-            <WorldMap result={result} selected={selected} highlight={highlight} onSelect={setSelected} activeTerritory={terrFilter} onPickTerritory={setTerrFilter} />
+            <WorldMap result={result} selected={selected} highlight={highlight} onSelect={setSelected} activeTerritory={terrFilter} onPickTerritory={setTerrFilter} openRequest={openRequest} onOpenedRequest={() => setOpenRequest(null)} />
           </section>
           {notice && (
             <div className="rise fixed bottom-[96px] left-1/2 z-30 flex -translate-x-1/2 items-center gap-2 rounded-lg border border-line bg-surface px-3 py-2 text-[13px] shadow-xl lg:left-[calc(50%+200px)]" role="status">
-              <Icon.Spark className="text-gold" />
+              <Icon.Spark className="text-neon" />
               <span>{notice}</span>
               <button className="ml-2 text-muted hover:text-ink" onClick={() => setNotice(null)} aria-label="Dismiss notice"><Icon.Close size={14} /></button>
             </div>
@@ -405,8 +408,9 @@ const TerrainMap = dynamic(() => import("./map/TerrainMap"), {
 });
 
 /** The world behind the HUD. Optional by design: any failure leaves a calm backdrop and the roster carries everything. */
-function WorldMap({ result, selected, highlight, onSelect, activeTerritory, onPickTerritory }: { result: RunResult; selected: string | null; highlight: string[]; onSelect: (k: string) => void; activeTerritory: string | null; onPickTerritory: (k: string | null) => void }) {
-  // India in 3D with territory names. Click a territory: its new requests. Click a request: its location, coordinates and satellite view.
+function WorldMap({ result, selected, highlight, onSelect, activeTerritory, onPickTerritory, openRequest, onOpenedRequest }: { result: RunResult; selected: string | null; highlight: string[]; onSelect: (k: string) => void; activeTerritory: string | null; onPickTerritory: (k: string | null) => void; openRequest: string | null; onOpenedRequest: () => void }) {
+  // India in 3D with territory names. Click a territory: fly into it with its requests and pin areas.
+  // Click a request: fly to its pin with its area, service ring, nearby stores, rivals and the satellite view.
   const [mode, setMode] = useState<"overview" | "explore">("overview");
   const [focus, setFocus] = useState<{ at: [number, number]; zoom: number } | null>(null);
   const [openKey, setOpenKey] = useState<string | null>(null);
@@ -415,44 +419,69 @@ function WorldMap({ result, selected, highlight, onSelect, activeTerritory, onPi
   const [reduced, setReduced] = useState(false);
   useEffect(() => setReduced(window.matchMedia("(prefers-reduced-motion: reduce)").matches), []);
   const points = useMemo(() => territoryPoints(result), [result]);
-  // picking a territory in the sidebar opens its requests too
-  useEffect(() => {
-    if (activeTerritory) {
-      setOpenKey(activeTerritory);
-      setRequest(null);
-    }
-  }, [activeTerritory]);
+  const list = useMemo(() => (openKey ? territoryRequests(result, openKey) : []), [result, openKey]);
+  const requestDecision = request ? result.decisions.find((d) => d.key === request) ?? null : null;
+  const overlay = useMemo(() => (openKey || requestDecision ? territoryOverlay(result, openKey && !openKey.startsWith("city:") ? openKey : requestDecision?.territoryKey ?? null, requestDecision) : null), [result, openKey, requestDecision]);
+
+  const flyToTerritory = (key: string) => {
+    const p = points.find((x) => x.key === key);
+    if (!p) return;
+    setFocus({ at: p.lngLat, zoom: 12 });
+    setMode("explore");
+  };
   const openTerritory = (key: string | null) => {
     setOpenKey(key);
     setRequest(null);
+    if (key) flyToTerritory(key);
     if (!key?.startsWith("city:")) onPickTerritory(key);
   };
   const deepDive = (d: Decision) => {
     const c = centroid(d.allocatedPin ?? d.pin);
     setRequest(d.key);
     if (c) {
-      setFocus({ at: [c.lon, c.lat], zoom: 14.5 });
+      setFocus({ at: [c.lon, c.lat], zoom: 14.2 });
       setMode("explore");
     }
   };
-  const exploreTerritory = () => {
-    const p = points.find((x) => x.key === openKey);
-    if (!p) return;
-    setFocus({ at: p.lngLat, zoom: 10.6 });
-    setMode("explore");
+  // picking a territory in the sidebar does the same as clicking its tag
+  useEffect(() => {
+    if (activeTerritory && activeTerritory !== openKey) {
+      setOpenKey(activeTerritory);
+      setRequest(null);
+      flyToTerritory(activeTerritory);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTerritory]);
+  // a request picked on the first page opens straight at its location
+  useEffect(() => {
+    if (!openRequest) return;
+    const d = result.decisions.find((x) => x.key === openRequest);
+    if (d) {
+      setOpenKey(d.territoryKey ?? points.find((p) => p.muted && territoryRequests(result, p.key).some((x) => x.key === d.key))?.key ?? null);
+      deepDive(d);
+    }
+    onOpenedRequest();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [openRequest]);
+  const step = (dir: 1 | -1) => {
+    if (!requestDecision || !list.length) return;
+    const i = list.findIndex((d) => d.key === requestDecision.key);
+    deepDive(list[(i + dir + list.length) % list.length]);
   };
   const backToIndia = () => {
     setMode("overview");
     setRequest(null);
+    setOpenKey(null);
+    onPickTerritory(null);
   };
-  const requestDecision = request ? result.decisions.find((d) => d.key === request) ?? null : null;
   return (
-    <div className="relative h-[60vh] w-full min-h-[380px] lg:h-auto lg:flex-1" aria-label="Map of India with territories, stores and applications" style={{ background: "radial-gradient(90% 70% at 55% 35%, #1a2232 0%, #060a10 70%)" }}>
+    <div className="relative h-[60vh] w-full min-h-[380px] lg:h-auto lg:flex-1" aria-label="Map of India with territories, stores and applications" style={{ background: "radial-gradient(90% 70% at 55% 35%, #191a2b 0%, #07070b 70%)" }}>
       {mode === "overview" ? (
         <Diorama
           points={points}
           activeKey={openKey}
           reducedMotion={reduced}
+          autoRotate
           onFail={(r) => {
             console.warn("3D overview unavailable, showing the live map:", r);
             setMode("explore");
@@ -461,25 +490,37 @@ function WorldMap({ result, selected, highlight, onSelect, activeTerritory, onPi
         />
       ) : (
         <>
-          {!failed && <TerrainMap result={result} selected={selected} highlight={highlight} onSelect={onSelect} theme="dark" reducedMotion={reduced} onFail={(r) => setFailed(r)} activeTerritory={activeTerritory} onPickTerritory={(k) => openTerritory(k)} focus={focus?.at ?? null} focusZoom={focus?.zoom} />}
+          {!failed && <TerrainMap result={result} selected={selected} highlight={[...highlight, ...(request ? [request] : list.map((d) => d.key))]} onSelect={onSelect} theme="dark" reducedMotion={reduced} onFail={(r) => setFailed(r)} activeTerritory={activeTerritory} onPickTerritory={(k) => openTerritory(k)} focus={focus?.at ?? null} focusZoom={focus?.zoom} overlay={overlay} />}
           <div className="world-vignette pointer-events-none absolute inset-0" aria-hidden />
-          <button type="button" onClick={backToIndia} className="absolute left-3 top-3 z-[3] inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-[#0c131c]/90 px-3.5 py-1.5 text-[12.5px] font-medium text-white shadow-lg hover:border-gold">
+          <button type="button" onClick={backToIndia} className="absolute left-3 top-3 z-[3] inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-[#101019]/90 px-3.5 py-1.5 text-[12.5px] font-medium text-white shadow-lg hover:border-neon">
             <span aria-hidden>←</span> Back to India
           </button>
           {failed && <p className="absolute bottom-24 left-1/2 -translate-x-1/2 text-[12px] text-muted">Map unavailable ({failed}). Every decision is in the list.</p>}
         </>
       )}
       {requestDecision ? (
-        <LocationPanel decision={requestDecision} onBack={() => setRequest(null)} onViewDecision={() => onSelect(requestDecision.key)} />
+        <LocationPanel
+          result={result}
+          decision={requestDecision}
+          index={Math.max(0, list.findIndex((d) => d.key === requestDecision.key))}
+          total={list.length || 1}
+          onPrev={() => step(-1)}
+          onNext={() => step(1)}
+          onBack={() => {
+            setRequest(null);
+            if (openKey) flyToTerritory(openKey);
+          }}
+          onViewDecision={() => onSelect(requestDecision.key)}
+        />
       ) : (
         openKey && (
           <RequestsPanel
             result={result}
             territoryKey={openKey}
             onOpenRequest={deepDive}
-            onExplore={exploreTerritory}
+            onExplore={() => flyToTerritory(openKey)}
             onClose={() => {
-              openTerritory(null);
+              setOpenKey(null);
               onPickTerritory(null);
             }}
           />

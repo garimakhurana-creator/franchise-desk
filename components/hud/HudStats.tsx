@@ -14,7 +14,7 @@ export function HudStats({ result, dataset, statusFilter, onStatus, onNotes }: {
   const issues = dataset.notes.filter((n) => n.severity !== "info").length;
   const toggle = (s: Status) => onStatus(statusFilter.includes(s) ? statusFilter.filter((x) => x !== s) : [...statusFilter, s]);
   return (
-    <div className="flex flex-wrap items-center gap-x-5 gap-y-2 border-b border-line bg-[#080e16] px-4 py-2.5">
+    <div className="flex flex-wrap items-center gap-x-5 gap-y-2 border-b border-line bg-[#0a0a10] px-4 py-2.5">
       <div className="leading-tight">
         <div className="text-[12px] text-muted">Moving forward</div>
         <div className="text-[18px] font-semibold">
@@ -49,7 +49,7 @@ export function HudStats({ result, dataset, statusFilter, onStatus, onNotes }: {
         <button type="button" onClick={onNotes} className="text-muted underline decoration-dotted underline-offset-2 hover:text-ink">
           {dataset.applications.length} read · {dataset.rowsIgnored.length} ignored · {issues} issue{issues === 1 ? "" : "s"}
         </button>
-        {dataset.source === "sample" && <span className="rounded px-1.5 py-0.5 font-semibold" style={{ background: "var(--gold-soft)", color: "var(--gold)" }}>Sample data</span>}
+        {dataset.source === "sample" && <span className="rounded px-1.5 py-0.5 font-semibold" style={{ background: "var(--neon-soft)", color: "var(--neon)" }}>Sample data</span>}
         <span className="inline-flex items-center gap-1.5 font-medium" style={{ color: result.pinConflicts ? "var(--declined)" : "var(--approved)" }} title="No two approved or conditional partners share a pin code, and none sits on an existing store's pin.">
           <Icon.Shield size={15} /> Pin rule verified: <span className="num">{result.pinConflicts}</span> conflicts
         </span>

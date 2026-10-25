@@ -3,28 +3,28 @@
 /* ---------- Design tokens (DESIGN.md: dusk, not neon; warm paper in light) ---------- */
 :root {
   color-scheme: dark;
-  /* Command-centre palette: deep night, gold for slots, status lights */
-  --bg: #060a10;
-  --surface: #0c131c;
-  --surface-2: #121c28;
-  --surface-3: #1a2736;
-  --line: #22344a;
-  --line-strong: #345070;
+  /* Command-centre palette: deep night, neon for slots, status lights */
+  --bg: #07070b;
+  --surface: #101019;
+  --surface-2: #161622;
+  --surface-3: #1e1e2d;
+  --line: #262638;
+  --line-strong: #3b3b58;
   --ink: #eef1f5;
-  --ink-2: #c4ccd6;
-  --muted: #8494a7;
-  --gold: #f5c451;
-  --gold-soft: #f5c45126;
-  --on-gold: #1a1203;
+  --ink-2: #cfcfdc;
+  --muted: #8e8ea6;
+  --neon: #8f7cff;
+  --neon-soft: #8f7cff2e;
+  --on-neon: #0b0618;
   --approved: #34d399;
-  --conditional: #4fd1e8;
+  --conditional: #c3f25c;
   --hold: #f5a524;
-  --wait: #a5b4fc;
+  --wait: #9aa3b2;
   --declined: #f87171;
   --withdrawn: #8b97a6;
-  --focus: #8cc8ff;
-  --hud-bg: rgba(7, 12, 19, 0.86);
-  --hud-edge: rgba(245, 196, 81, 0.22);
+  --focus: #b4a6ff;
+  --hud-bg: rgba(9, 9, 14, 0.86);
+  --hud-edge: rgba(143, 124, 255, 0.28);
   --shadow: 0 1px 0 #ffffff08, 0 18px 40px -18px #000000cc;
   --radius-s: 4px;
   --radius-m: 8px;
@@ -46,7 +46,7 @@
   --color-ink: var(--ink);
   --color-ink-2: var(--ink-2);
   --color-muted: var(--muted);
-  --color-gold: var(--gold);
+  --color-neon: var(--neon);
   --color-approved: var(--approved);
   --color-conditional: var(--conditional);
   --color-hold: var(--hold);
@@ -86,7 +86,7 @@ table td.num {
   border-radius: 4px;
 }
 ::selection {
-  background: var(--gold-soft);
+  background: var(--neon-soft);
 }
 
 /* hatching for conditional (shape, not only colour) */
@@ -117,7 +117,7 @@ table td.num {
 }
 @keyframes pulse-ring {
   0% {
-    box-shadow: 0 0 0 0 var(--gold-soft);
+    box-shadow: 0 0 0 0 var(--neon-soft);
   }
   100% {
     box-shadow: 0 0 0 10px transparent;
@@ -250,12 +250,12 @@ table td.num {
 }
 .tm-callout:hover .tm-tag,
 .tm-callout:focus-visible .tm-tag {
-  border-color: #f2c14e;
-  box-shadow: 0 0 0 2px #f2c14e88, 0 8px 22px -8px #000c;
+  border-color: #8f7cff;
+  box-shadow: 0 0 0 2px #8f7cff88, 0 8px 22px -8px #000c;
 }
 .tm-callout.is-active .tm-tag {
-  border-color: #b7861a;
-  box-shadow: 0 0 0 2px #f2c14e, 0 8px 22px -8px #000c;
+  border-color: #6d5cf0;
+  box-shadow: 0 0 0 2px #8f7cff, 0 8px 22px -8px #000c;
 }
 .tm-callout.is-orphan .tm-tag {
   background: #d9d6cf;
@@ -276,7 +276,7 @@ table td.num {
   }
 }
 .tm-legend {
-  background: #0b1820c4;
+  background: #0e0e16c4;
   color: #efe9dd;
   backdrop-filter: blur(2px);
 }
@@ -294,8 +294,8 @@ table td.num {
   font-family: var(--font-sans);
 }
 .hud-panel {
-  background: #0b121b;
-  border: 1px solid #1c2939;
+  background: #0d0d14;
+  border: 1px solid #23233a;
   border-radius: 10px;
 }
 .hud-label {
@@ -314,22 +314,22 @@ table td.num {
   border-radius: 3px;
 }
 .pip.filled {
-  background: var(--gold);
+  background: var(--neon);
 }
 .pip.reserved {
-  color: var(--gold);
+  color: var(--neon);
   background-image: repeating-linear-gradient(135deg, currentColor 0 2px, transparent 2px 5px);
-  box-shadow: inset 0 0 0 1.5px var(--gold);
+  box-shadow: inset 0 0 0 1.5px var(--neon);
 }
 .pip.open {
-  box-shadow: inset 0 0 0 1.5px #f5c45199;
+  box-shadow: inset 0 0 0 1.5px #8f7cff99;
 }
 .pip.blocked {
-  box-shadow: inset 0 0 0 1.5px #4a5a6e;
-  background: linear-gradient(135deg, transparent 45%, #4a5a6e 45% 55%, transparent 55%);
+  box-shadow: inset 0 0 0 1.5px #4a4a62;
+  background: linear-gradient(135deg, transparent 45%, #4a4a62 45% 55%, transparent 55%);
 }
 .world-vignette {
-  background: linear-gradient(180deg, #060a1066 0%, transparent 10%, transparent 88%, #060a1099 100%);
+  background: linear-gradient(180deg, #07070b66 0%, transparent 10%, transparent 88%, #07070b99 100%);
 }
 
 /* Diorama tags: the tag is the button, positioned by transform; fade in without touching transform */
@@ -342,8 +342,8 @@ table td.num {
 }
 .dio-tag:hover,
 .dio-tag:focus-visible {
-  border-color: #f2c14e;
-  box-shadow: 0 0 0 2px #f2c14e88, 0 8px 22px -8px #000c;
+  border-color: #8f7cff;
+  box-shadow: 0 0 0 2px #8f7cff88, 0 8px 22px -8px #000c;
   z-index: 2;
 }
 @keyframes dio-in {
@@ -368,7 +368,182 @@ table td.num {
   }
 }
 .dio-tag.is-active {
-  border-color: #b7861a;
-  box-shadow: 0 0 0 2px #f2c14e, 0 8px 22px -8px #000c;
+  border-color: #6d5cf0;
+  box-shadow: 0 0 0 2px #8f7cff, 0 8px 22px -8px #000c;
   z-index: 3;
+}
+
+/* Neon accent: a soft glow on primary actions and the active state, kept subtle for an internal tool */
+.neon-btn {
+  background: var(--neon);
+  color: var(--on-neon);
+  box-shadow: 0 0 0 1px #b4a6ff55, 0 0 22px -4px #8f7cffaa;
+  transition: box-shadow var(--dur-2) var(--ease-out), transform var(--dur-2) var(--ease-out);
+}
+.neon-btn:hover {
+  box-shadow: 0 0 0 1px #c9bfff, 0 0 30px -2px #8f7cffdd;
+}
+.neon-text {
+  color: #b4a6ff;
+  text-shadow: 0 0 18px #8f7cff88;
+}
+
+/* ---------- Diorama pins: neon teardrop with the request count, glass name label beside it ---------- */
+.dio-tag {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  pointer-events: auto;
+  white-space: nowrap;
+  font-family: var(--font-sans);
+}
+.dio-tag.flip {
+  flex-direction: row-reverse;
+}
+.dp-pin {
+  position: relative;
+  width: 30px;
+  height: 40px;
+  flex: none;
+}
+.dp-head {
+  position: absolute;
+  left: 2px;
+  top: 0;
+  width: 26px;
+  height: 26px;
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  transform-origin: 50% 50%;
+  background: linear-gradient(135deg, #b4a6ff 0%, #8f7cff 45%, #5b3df5 100%);
+  box-shadow: 0 0 0 1.5px #ffffffcc inset, 0 0 16px 2px #8f7cffaa, 0 6px 12px -4px #000c;
+  display: grid;
+  place-items: center;
+  top: 2px;
+}
+.dp-num {
+  transform: rotate(45deg);
+  color: #fff;
+  font: 700 12px/1 var(--font-sans);
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 1px 2px #0008;
+}
+.dp-num:empty::after {
+  content: "";
+  display: block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #fff;
+}
+/* the tip touches the ground at the bottom centre, where a soft pulse marks the spot */
+.dp-pulse {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: 14px;
+  height: 6px;
+  margin-left: -7px;
+  border-radius: 50%;
+  background: #8f7cff;
+  box-shadow: 0 0 10px 3px #8f7cffaa;
+  opacity: 0.8;
+  animation: dp-pulse 2.4s ease-out infinite;
+}
+@keyframes dp-pulse {
+  0% {
+    transform: scale(0.6);
+    opacity: 0.9;
+  }
+  100% {
+    transform: scale(2.4);
+    opacity: 0;
+  }
+}
+.dp-name {
+  margin-bottom: 18px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: #0d0d14d9;
+  border: 1px solid #8f7cff55;
+  color: #e9e6ff;
+  font-size: 12.5px;
+  line-height: 1.2;
+  backdrop-filter: blur(4px);
+  box-shadow: 0 4px 14px -6px #000c;
+}
+.dp-name b {
+  font-weight: 700;
+  color: #fff;
+}
+.dio-tag:hover .dp-name,
+.dio-tag:focus-visible .dp-name,
+.dio-tag.is-active .dp-name {
+  border-color: #b4a6ff;
+  box-shadow: 0 0 0 1px #b4a6ff, 0 0 18px -2px #8f7cffaa;
+}
+.dio-tag:hover .dp-head,
+.dio-tag.is-active .dp-head {
+  box-shadow: 0 0 0 1.5px #fff inset, 0 0 24px 5px #8f7cffdd, 0 6px 12px -4px #000c;
+}
+.dio-tag:hover,
+.dio-tag:focus-visible,
+.dio-tag.is-active {
+  z-index: 3;
+  box-shadow: none;
+  border: 0;
+}
+.dio-tag.is-orphan .dp-head {
+  background: linear-gradient(135deg, #c9c9d6, #8e8ea6);
+  box-shadow: 0 0 0 1.5px #ffffff99 inset, 0 6px 12px -4px #000c;
+}
+.dio-tag.is-orphan .dp-pulse {
+  display: none;
+}
+.dio-tag.is-orphan .dp-name {
+  border-color: #ffffff22;
+  color: #cfcfdc;
+}
+@media (max-width: 640px) {
+  .dp-name {
+    font-size: 11px;
+    padding: 2px 6px;
+  }
+}
+
+/* Live-map territory tags in the same glass-and-neon style as the 3D pins */
+.tm-tag {
+  background: #0d0d14e0;
+  color: #e9e6ff;
+  border: 1px solid #8f7cff66;
+  border-radius: 6px;
+  backdrop-filter: blur(4px);
+}
+.tm-title b,
+.tm-req {
+  color: #fff;
+}
+.tm-sub {
+  color: #a9a6c4;
+}
+.tm-pole {
+  width: 1.5px;
+  background: linear-gradient(#b4a6ff, #8f7cff33);
+}
+.tm-foot {
+  background: #b4a6ff;
+  box-shadow: 0 0 0 3px #8f7cff44, 0 0 12px 2px #8f7cffaa;
+}
+.tm-callout.is-orphan .tm-tag {
+  background: #15151fe0;
+  color: #cfcfdc;
+  border-color: #ffffff22;
+}
+.tm-callout.is-orphan .tm-pole,
+.tm-callout.is-orphan .tm-foot {
+  background: #8e8ea6;
 }

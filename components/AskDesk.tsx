@@ -109,7 +109,7 @@ export const AskDesk = forwardRef<HTMLInputElement, { turns: Turn[]; busy: boole
               </button>
             )}
             <kbd className="hidden md:inline rounded border border-line px-1.5 text-[11px] text-muted" title="Press / to focus">/</kbd>
-            <button type="submit" aria-disabled={busy || !text.trim()} className="grid size-10 place-items-center rounded-full aria-disabled:opacity-40" style={{ background: "var(--gold)", color: "var(--on-gold)" }} aria-label="Send">
+            <button type="submit" aria-disabled={busy || !text.trim()} className="grid size-10 place-items-center rounded-full aria-disabled:opacity-40" style={{ background: "var(--neon)", color: "var(--on-neon)" }} aria-label="Send">
               <Icon.Send />
             </button>
           </form>
@@ -125,7 +125,7 @@ function linkIds(text: string, result: RunResult, onSelect: (k: string) => void)
     const d = result.decisions.find((x) => x.id === p);
     if (d)
       return (
-        <button key={i} type="button" onClick={() => onSelect(d.key)} className="num font-semibold underline decoration-dotted underline-offset-2 hover:text-gold">
+        <button key={i} type="button" onClick={() => onSelect(d.key)} className="num font-semibold underline decoration-dotted underline-offset-2 hover:text-neon">
           {p}
         </button>
       );
@@ -138,7 +138,7 @@ function BlockView({ b, onSelect, onSwap, result }: { b: Block; onSelect: (k: st
   if (b.kind === "apply") return <p className="mt-1 text-[13px] text-muted">{b.label}</p>;
   if (b.kind === "swap")
     return (
-      <div className="my-2 flex flex-wrap items-center gap-3 rounded-[var(--radius-m)] border-2 border-dashed px-3 py-2" style={{ borderColor: "var(--gold)" }}>
+      <div className="my-2 flex flex-wrap items-center gap-3 rounded-[var(--radius-m)] border-2 border-dashed px-3 py-2" style={{ borderColor: "var(--neon)" }}>
         <Icon.Swap />
         <span className="text-[13.5px]">
           Approve <b>{b.challenger}</b>, move <b>{b.displaced}</b> to the waitlist ({b.challenger} leads by {b.gap} points).
@@ -146,7 +146,7 @@ function BlockView({ b, onSelect, onSwap, result }: { b: Block; onSelect: (k: st
         {b.simulated ? (
           <span className="text-[12px] text-muted">Apply the what-if first, then confirm.</span>
         ) : (
-          <button type="button" onClick={() => onSwap(b.challengerKey, b.displacedKey)} className="rounded-full px-3 py-1 text-[13px] font-semibold" style={{ background: "var(--gold)", color: "var(--on-gold)" }}>
+          <button type="button" onClick={() => onSwap(b.challengerKey, b.displacedKey)} className="rounded-full px-3 py-1 text-[13px] font-semibold" style={{ background: "var(--neon)", color: "var(--on-neon)" }}>
             Confirm swap
           </button>
         )}

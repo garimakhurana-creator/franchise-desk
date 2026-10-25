@@ -54,7 +54,7 @@ export function DecisionCard({
       tabIndex={-1}
       aria-label={`Decision for ${d.id}`}
       className="rise fixed inset-x-0 bottom-0 top-[53px] z-40 overflow-y-auto border-l-2 bg-surface scrollbar-thin md:left-auto md:w-[min(560px,46vw)] focus:outline-none"
-      style={{ boxShadow: "-30px 0 60px -30px #000, inset 1px 0 0 #ffffff08", borderColor: STATUS_VAR[d.status], background: "linear-gradient(180deg, #0e1622, #080d14)" }}
+      style={{ boxShadow: "-30px 0 60px -30px #000, inset 1px 0 0 #ffffff08", borderColor: STATUS_VAR[d.status], background: "linear-gradient(180deg, #12121b, #09090f)" }}
     >
       <div className="sticky top-0 z-10 flex items-center gap-2 border-b border-line bg-surface/95 px-5 py-3 backdrop-blur-[2px]">
         <span className="num text-[15px] font-semibold">{d.id}</span>
@@ -101,12 +101,12 @@ export function DecisionCard({
             )}
           </div>
           {d.contested && displaced && (
-            <div className="mt-4 rounded-[var(--radius-m)] border-2 border-dashed px-4 py-3" style={{ borderColor: "var(--gold)" }}>
+            <div className="mt-4 rounded-[var(--radius-m)] border-2 border-dashed px-4 py-3" style={{ borderColor: "var(--neon)" }}>
               <div className="flex items-center gap-2 text-[14px] font-semibold"><Icon.Swap /> Swap recommendation</div>
               <p className="mt-1 text-[13.5px] leading-snug text-ink-2">
                 {d.id} now outranks approved partner {displaced.id} by {d.contested.gap} points. The approval stays unless a person confirms the swap; {displaced.id} would move to the waitlist with an alternative offered.
               </p>
-              <button type="button" onClick={() => onSwap(d.key, displaced.key)} className="mt-2.5 inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-[13px] font-semibold" style={{ background: "var(--gold)", color: "var(--on-gold)" }}>
+              <button type="button" onClick={() => onSwap(d.key, displaced.key)} className="mt-2.5 inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-[13px] font-semibold" style={{ background: "var(--neon)", color: "var(--on-neon)" }}>
                 <Icon.Swap size={14} /> Confirm swap
               </button>
             </div>
@@ -290,7 +290,7 @@ export function DecisionCard({
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className="mt-6 border-t border-line pt-4">
-      <h3 className="hud-label mb-2.5 text-[11.5px] text-gold">{title}</h3>
+      <h3 className="hud-label mb-2.5 text-[11.5px] text-neon">{title}</h3>
       {children}
     </section>
   );
@@ -323,7 +323,7 @@ function Box({ title, children }: { title: string; children: React.ReactNode }) 
   );
 }
 
-const OWNER_COLOR: Record<string, string> = { Legal: "var(--wait)", Applicant: "var(--hold)", Field: "var(--conditional)", Expansion: "var(--gold)", Training: "var(--approved)", "Supply chain": "var(--ink-2)" };
+const OWNER_COLOR: Record<string, string> = { Legal: "var(--wait)", Applicant: "var(--hold)", Field: "var(--conditional)", Expansion: "var(--neon)", Training: "var(--approved)", "Supply chain": "var(--ink-2)" };
 
 function Gantt({ plan }: { plan: NonNullable<Decision["plan"]> }) {
   const total = Math.max(plan.totalWeeks + 1, ...plan.steps.map((s) => s.week + s.weeks - 1));

@@ -24,15 +24,23 @@ export interface TerrainMapProps {
   focus?: [number, number] | null;
   /** How close the deep dive gets: about 10.6 for a territory, 14.5 for one applicant's pin. */
   focusZoom?: number;
+  /** Pin areas, service ring and nearest-store line for the territory or request being inspected. */
+  overlay?: GeoJSON.FeatureCollection | null;
 }
 
-const STATUS_HEX: Record<Status, string> = { APPROVED: "#2fbf8f", CONDITIONAL: "#4fc3d9", WAITLISTED: "#9aa6d3", ON_HOLD: "#e39a3b", DECLINED: "#e2685f", WITHDRAWN: "#8a989e" };
+const STATUS_HEX: Record<Status, string> = { APPROVED: "#2fbf8f", CONDITIONAL: "#b5e655", WAITLISTED: "#9aa3b2", ON_HOLD: "#e39a3b", DECLINED: "#e2685f", WITHDRAWN: "#8a989e" };
+// keep the inspected place clear of the side panel (right on wide screens, bottom sheet on phones)
+const focusPadding = (map: MLMap) => {
+  const el = map.getContainer();
+  return el.clientWidth >= 900 ? { top: 0, bottom: 90, left: 0, right: 380 } : { top: 0, bottom: Math.round(el.clientHeight * 0.5), left: 0, right: 0 };
+};
+const EMPTY: GeoJSON.FeatureCollection = { type: "FeatureCollection", features: [] };
 const STATUS_ORDER: Status[] = ["APPROVED", "CONDITIONAL", "WAITLISTED", "ON_HOLD", "DECLINED", "WITHDRAWN"];
 // Opening shot: India tilted towards the Himalayas, then the camera flies south to Karnataka.
 const INDIA_VIEW = { center: [79.5, 24.5] as [number, number], zoom: 4.05, pitch: 60, bearing: 12 };
 
 function style(theme: "light" | "dark"): StyleSpecification {
-  const mask = theme === "dark" ? "#0b1820" : "#e9e4d8";
+  const mask = theme === "dark" ? "#0e0e16" : "#e9e4d8";
   return {
     version: 8,
     sources: {
@@ -85,7 +93,7 @@ export default function TerrainMap(props: TerrainMapProps) {
     let map: MLMap;
     try {
       // a deep dive opens straight at the territory, so only its tiles load
-      const start = props.focus ? { center: props.focus, zoom: (props.focusZoom ?? 10.6) - 1, pitch: 50, bearing: -10 } : INDIA_VIEW;
+      const start = props.focus ? { center: props.focus, zoom: (props.focusZoom ?? 10.6) - 0.6, pitch: 50, bearing: -10 } : INDIA_VIEW;
       map = new maplibregl.Map({ container: el, style: style(props.theme), ...start, maxPitch: 72, maxZoom: 18, attributionControl: false, fadeDuration: 0 });
       // credits stay available behind an (i) button, collapsed so they never cover the console
       map.addControl(new maplibregl.AttributionControl({ compact: true }), "bottom-right");
@@ -119,11 +127,11 @@ export default function TerrainMap(props: TerrainMapProps) {
         map.addSource("states", { type: "geojson", data: states as GeoJSON.FeatureCollection });
         map.addLayer({ id: "roads", type: "raster", source: "roads", minzoom: 9, maxzoom: 15, paint: { "raster-opacity": 0.75 } });
         map.addLayer({ id: "labels", type: "raster", source: "labels", minzoom: 4.5, maxzoom: 15, paint: { "raster-opacity": 1 } });
-        map.addLayer({ id: "mask", type: "fill", source: "mask", paint: { "fill-color": dark ? "#0b1820" : "#e9e4d8", "fill-opacity": 0.97 } });
+        map.addLayer({ id: "mask", type: "fill", source: "mask", paint: { "fill-color": dark ? "#0e0e16" : "#e9e4d8", "fill-opacity": 0.97 } });
         map.addLayer({ id: "states", type: "line", source: "states", paint: { "line-color": "#f5ecd8", "line-opacity": 0.22, "line-width": 0.6 } });
         map.addLayer({ id: "india-edge", type: "line", source: "india", paint: { "line-color": "#f5ecd8", "line-opacity": 0.75, "line-width": 1.2 } });
-        map.addLayer({ id: "ka-glow", type: "line", source: "ka", paint: { "line-color": "#f2c14e", "line-opacity": 0.35, "line-width": 6, "line-blur": 5 } });
-        map.addLayer({ id: "ka-edge", type: "line", source: "ka", paint: { "line-color": "#f2c14e", "line-opacity": 0.9, "line-width": 1.4 } });
+        map.addLayer({ id: "ka-glow", type: "line", source: "ka", paint: { "line-color": "#8f7cff", "line-opacity": 0.35, "line-width": 6, "line-blur": 5 } });
+        map.addLayer({ id: "ka-edge", type: "line", source: "ka", paint: { "line-color": "#8f7cff", "line-opacity": 0.9, "line-width": 1.4 } });
 
         const data = buildTerrainData(latest.current.result);
         map.addSource("discs", { type: "geojson", data: data.discs });
@@ -137,15 +145,23 @@ export default function TerrainMap(props: TerrainMapProps) {
           type: "fill-extrusion",
           source: "towers",
           paint: {
-            "fill-extrusion-color": ["match", ["get", "kind"], "approved", "#f2c14e", "conditional", "#f6d987", "open", "#fff3cf", "#8a8f94"],
+            "fill-extrusion-color": ["match", ["get", "kind"], "approved", "#8f7cff", "conditional", "#c3f25c", "open", "#e4defc", "#6b6b80"],
             "fill-extrusion-opacity": 0.92,
             "fill-extrusion-base": ["get", "base"],
             "fill-extrusion-height": ["get", "top"],
           },
         });
-        map.addLayer({ id: "arcs", type: "line", source: "arcs", paint: { "line-color": "#f2c14e", "line-width": 2.4, "line-dasharray": [2, 1.5] } });
+        // pin areas: free ones glow neon (room for a new store), our stores and partner pins are muted
+        map.addSource("areas", { type: "geojson", data: latest.current.overlay ?? EMPTY });
+        const AREA_FILL = ["match", ["get", "kind"], "applicant", "#8f7cff", "free", "#3cf2c0", "rival", "#f5a524", "store", "#f87171", "taken", "#9aa3b2", "#000"];
+        map.addLayer({ id: "area-fill", type: "fill", source: "areas", filter: ["==", ["geometry-type"], "Polygon"], paint: { "fill-color": AREA_FILL as unknown as string, "fill-opacity": ["match", ["get", "kind"], "applicant", 0.38, "service", 0, 0.2] } });
+        map.addLayer({ id: "area-glow", type: "line", source: "areas", filter: ["==", ["get", "kind"], "applicant"], paint: { "line-color": "#b4a6ff", "line-width": 9, "line-blur": 7, "line-opacity": 0.8 } });
+        map.addLayer({ id: "area-line", type: "line", source: "areas", filter: ["all", ["==", ["geometry-type"], "Polygon"], ["!=", ["get", "kind"], "service"]], paint: { "line-color": AREA_FILL as unknown as string, "line-width": ["match", ["get", "kind"], "applicant", 2.6, 1.2], "line-opacity": 0.95 } });
+        map.addLayer({ id: "area-service", type: "line", source: "areas", filter: ["==", ["get", "kind"], "service"], paint: { "line-color": "#e4defc", "line-width": 1.8, "line-dasharray": [3, 2] } });
+        map.addLayer({ id: "area-nearest", type: "line", source: "areas", filter: ["==", ["get", "kind"], "nearest"], paint: { "line-color": "#f87171", "line-width": 2, "line-dasharray": [1, 1.5] } });
+        map.addLayer({ id: "arcs", type: "line", source: "arcs", paint: { "line-color": "#8f7cff", "line-width": 2.4, "line-dasharray": [2, 1.5] } });
         map.addLayer({ id: "stores", type: "circle", source: "stores", paint: { "circle-color": "#1b1f24", "circle-stroke-color": "#f5ecd8", "circle-stroke-width": 1.6, "circle-radius": ["interpolate", ["linear"], ["zoom"], 5, 2.5, 10, 6] } });
-        map.addLayer({ id: "stone-halo", type: "circle", source: "stones", filter: ["in", ["get", "key"], ["literal", []]], paint: { "circle-color": "#f2c14e", "circle-opacity": 0.25, "circle-radius": ["interpolate", ["linear"], ["zoom"], 5, 9, 11, 20], "circle-blur": 0.4 } });
+        map.addLayer({ id: "stone-halo", type: "circle", source: "stones", filter: ["in", ["get", "key"], ["literal", []]], paint: { "circle-color": "#8f7cff", "circle-opacity": 0.25, "circle-radius": ["interpolate", ["linear"], ["zoom"], 5, 9, 11, 20], "circle-blur": 0.4 } });
         map.addLayer({
           id: "stones",
           type: "circle",
@@ -226,6 +242,13 @@ export default function TerrainMap(props: TerrainMapProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [props.result]);
 
+  // ---------- inspected territory or request ----------
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !ready.current) return;
+    (map.getSource("areas") as GeoJSONSource | undefined)?.setData(props.overlay ?? EMPTY);
+  }, [props.overlay]);
+
   // ---------- highlight and selection ----------
   useEffect(() => {
     const map = mapRef.current;
@@ -251,7 +274,7 @@ export default function TerrainMap(props: TerrainMapProps) {
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !ready.current || !props.focus) return;
-    const to = { center: props.focus, zoom: props.focusZoom ?? Math.max(10.6, map.getZoom()), pitch: 55 };
+    const to = { center: props.focus, zoom: props.focusZoom ?? Math.max(10.6, map.getZoom()), pitch: 55, padding: focusPadding(map) };
     if (props.reducedMotion) map.jumpTo(to);
     else map.flyTo({ ...to, duration: 1800, essential: true });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -333,11 +356,11 @@ export default function TerrainMap(props: TerrainMapProps) {
     const f = latest.current.focus;
     if (f && map.getContainer().clientHeight >= 80) {
       map.resize();
-      const to = { center: f, zoom: latest.current.focusZoom ?? 10.6, pitch: 55, bearing: -10 };
+      const to = { center: f, zoom: latest.current.focusZoom ?? 10.6, pitch: 55, bearing: -10, padding: focusPadding(map) };
       if (latest.current.reducedMotion) map.jumpTo(to);
       else {
-        map.jumpTo({ center: f, zoom: 7.2, pitch: 40, bearing: 0 });
-        map.flyTo({ ...to, duration: 2200, essential: true });
+        // already close: a short glide in, so only street-level tiles load
+        map.easeTo({ ...to, duration: 1400, essential: true });
       }
       return;
     }
@@ -392,7 +415,7 @@ export default function TerrainMap(props: TerrainMapProps) {
     <div className="relative h-full w-full">
       {/* inline position: MapLibre adds its own position:relative class to the container */}
       <div ref={box} style={{ position: "absolute", inset: 0 }} />
-      <div className="absolute left-3 top-3 z-[2] flex overflow-hidden rounded-md border border-white/10 bg-[#0c131c]/90 text-[12px] font-medium shadow-lg" role="group" aria-label="Base map">
+      <div className="absolute left-3 top-3 z-[2] flex overflow-hidden rounded-md border border-white/10 bg-[#101019]/90 text-[12px] font-medium shadow-lg" role="group" aria-label="Base map">
         {(["satellite", "map"] as const).map((m) => (
           <button key={m} type="button" onClick={() => switchMode(m)} aria-pressed={mode === m} className={`px-3 py-1.5 capitalize transition-colors ${mode === m ? "bg-white/12 text-white" : "text-white/60 hover:text-white"}`}>
             {m}
@@ -410,11 +433,11 @@ export default function TerrainMap(props: TerrainMapProps) {
                 </span>
               ))}
             </div>
-            <div className="mt-1 opacity-80">Gold blocks: slots (solid filled, pale open, grey blocked by pins). Rings: our stores with 2 km catchment.</div>
+            <div className="mt-1 opacity-80">Neon blocks: slots (solid filled, pale open, grey blocked by pins). Rings: our stores with 2 km catchment.</div>
             <div className="mt-0.5 opacity-60">Pin centres approximate; no catchment boundaries provided. Relief exaggerated 2.6×.</div>
           </div>
         )}
-        <button type="button" onClick={() => setLegend((v) => !v)} aria-expanded={legend} className="rounded-md border border-white/10 bg-[#0c131c]/90 px-2.5 py-1 text-[12px] text-white/75 shadow-lg hover:text-white">
+        <button type="button" onClick={() => setLegend((v) => !v)} aria-expanded={legend} className="rounded-md border border-white/10 bg-[#101019]/90 px-2.5 py-1 text-[12px] text-white/75 shadow-lg hover:text-white">
           {legend ? "Hide legend" : "Legend"}
         </button>
       </div>

@@ -6,7 +6,7 @@ export default function NotFound() {
         This pin has no store, <em>and no page either.</em>
       </h1>
       <p className="text-[16px] text-ink-2">The desk lives on one page. Go back and upload the workbook or try the sample data.</p>
-      <a href="/" className="w-fit rounded-full px-4 py-2 text-[14px] font-semibold" style={{ background: "var(--gold)", color: "var(--on-gold)" }}>
+      <a href="/" className="w-fit rounded-full px-4 py-2 text-[14px] font-semibold" style={{ background: "var(--neon)", color: "var(--on-neon)" }}>
         Open the desk
       </a>
     </main>
