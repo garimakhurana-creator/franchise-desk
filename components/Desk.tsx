@@ -181,8 +181,8 @@ export default function Desk() {
         let parsed: Parsed = rules;
         let mode: Reply["mode"] = "Rule-based";
         let memory = rules.memory;
-        // Prefer the model only when the rules could not understand the message, or it is not in English.
-        const needsModel = rules.commands.every((c) => c.intent === "help") || (rules.language !== "English" && rules.language !== undefined);
+        // Rules first (fast, deterministic); the model only helps when the rules could not understand the message.
+        const needsModel = rules.commands.every((c) => c.intent === "help");
         if (needsModel) {
           const m = await tryModel(text, chat);
           if (m) {

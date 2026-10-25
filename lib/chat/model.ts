@@ -89,6 +89,10 @@ function stripNulls(o: unknown): unknown {
 export function normaliseModelOutput(raw: unknown, message: string, recent: string[]): Parsed | null {
   const cleaned = stripNulls(raw) as { commands?: Record<string, unknown>[]; language?: string };
   if (!cleaned?.commands) return null;
+  // a model "explain" for a message that clearly carries facts and asks no "why" is really an update
+  const why = /why|kyun|kyon|क्यों|ಯಾಕೆ|ಏಕೆ|explain|reason|कारण|ಕಾರಣ/i.test(message);
+  const ruleFacts = extractFacts(message).changes;
+  if (!why && Object.keys(ruleFacts).length) for (const c of cleaned.commands) if ((c.intent === "explain" || c.intent === "help") && (c.ids || c.id)) { c.intent = "update_facts"; c.id = c.id ?? (c.ids as string[])[0]; delete c.ids; delete c.premise; }
   const MULTI = ["explain", "next_steps", "what_would_it_take", "compare", "rank_explain"];
   const SINGLE = ["update_facts", "withdraw", "verify"];
   for (const c of cleaned.commands) {

@@ -68,7 +68,7 @@ export function clauses(message: string): string[] {
   return out;
 }
 
-const UPDATE_HINT = /(withdr|backed out|pulled out|dropped out|found|has a|got a|secured|signed|sq ?ft|sqft|square|ground|floor|mall|upper|lakh|crore|lac|\bcr\b|rented|leased|owned|bought|fell through|lost the|pin(?: code)? (?:is|to|changed|now)|moves? to|relocat|shift|experience|months|slots?)/i;
+const UPDATE_HINT = /(withdr|backed out|pulled out|dropped out|found|has a|got a|secured|signed|sq ?ft|sqft|square|ground|floor|mall|upper|lakh|crore|lac|\bcr\b|rented|leased|owned|bought|fell through|lost the|pin(?: code)? (?:is|to|changed|now)|moves? to|relocat|shift|experience|months|slots?|मिल गई|मिल गया|जगह|दुकान|वर्ग|फुट|फ़ुट|फ्लोर|मंजिल|लाख|करोड़|वापस|किराय|ಸಿಕ್ಕಿದೆ|ಜಾಗ|ಅಂಗಡಿ|ಚದರ|ಅಡಿ|ಮಹಡಿ|ಲಕ್ಷ|ಹಿಂಪಡೆ|ಬಾಡಿಗೆ|jagah|dukaan|mil gay|wapas)/i;
 
 function hypothetical(text: string): boolean {
   return /\b(what if|suppose|supposing|imagine|hypothetical(ly)?|would happen if|simulate|what would happen)\b/i.test(text) && !/simulate \d+ days/i.test(text);
