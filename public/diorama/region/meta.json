@@ -1,0 +1,25 @@
+{
+ "zoom": 9,
+ "bbox": [
+  72.6,
+  11.2,
+  79.6,
+  16.8
+ ],
+ "mercPx": [
+  91968.85333333333,
+  59329.72708823199,
+  94517.47555555556,
+  61431.983991836714
+ ],
+ "height": {
+  "w": 720,
+  "h": 594,
+  "encoding": "terrarium"
+ },
+ "texture": {
+  "w": 3072,
+  "h": 2533
+ },
+ "sources": "Elevation: AWS Terrain Tiles (Mapzen). Imagery: Sentinel-2 cloudless by EOX (CC BY-NC-SA 4.0, contains modified Copernicus Sentinel data 2020). Outline: Natural Earth."
+}

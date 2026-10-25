@@ -498,7 +498,7 @@ function WorldMap({ result, selected, highlight, onSelect, activeTerritory, onPi
           {failed && <p className="absolute bottom-24 left-1/2 -translate-x-1/2 text-[12px] text-muted">Map unavailable ({failed}). Every decision is in the list.</p>}
         </>
       )}
-      {(flat || mode === "overview") && <PinLegend points={points} />}
+      {(flat || mode === "overview") && !openKey && <PinLegend points={points} corner="right" />}
       {requestDecision ? (
         <LocationPanel
           result={result}

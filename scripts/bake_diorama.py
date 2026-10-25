@@ -4,7 +4,8 @@ Sources (credited in the app): elevation from AWS Terrain Tiles (Mapzen, open da
 imagery from Sentinel-2 cloudless by EOX (CC BY-NC-SA 4.0, Copernicus Sentinel data 2020);
 India outline from public/geo/india.json (Natural Earth, public domain).
 All three images share one Web Mercator pixel grid described in meta.json.
-Usage: python -I scripts/bake_diorama.py   (writes public/diorama/)
+Usage: python -I scripts/bake_diorama.py            (all India, writes public/diorama/)
+       python -I scripts/bake_diorama.py region     (close-up slab of the territory region, public/diorama/region/)
 """
 import io, json, math, os, sys, time, urllib.request
 from concurrent.futures import ThreadPoolExecutor
@@ -12,9 +13,12 @@ from pathlib import Path
 from PIL import Image, ImageDraw
 
 ROOT = Path(__file__).resolve().parent.parent
-OUT = ROOT / "public" / "diorama"
-Z = 6
-BBOX = (67.5, 5.5, 98.5, 37.6)  # lon min, lat min, lon max, lat max
+REGION = len(sys.argv) > 1 and sys.argv[1] == "region"
+OUT = ROOT / "public" / "diorama" / ("region" if REGION else "")
+# the region covers Karnataka with a margin: every expansion city and territory sits inside it
+Z = 9 if REGION else 6
+BBOX = (72.6, 11.2, 79.6, 16.8) if REGION else (67.5, 5.5, 98.5, 37.6)  # lon min, lat min, lon max, lat max
+HW, TW = (720, 3072) if REGION else (640, 2048)
 UA = {"User-Agent": "franchise-desk-diorama-bake/1.0 (one-off)"}
 
 def merc(lon, lat, z=Z):
@@ -56,10 +60,10 @@ def main():
     sat, _ = stitch(lambda x, y: f"https://tiles.maps.eox.at/wmts/1.0.0/s2cloudless-2020_3857/default/g/{Z}/{y}/{x}.jpg")
     w, h = dem.size
     # keep the heightmap as terrarium RGB (decoded in the browser), downsized for the mesh
-    hw = 640
+    hw = HW
     hh = round(h * hw / w)
     dem.resize((hw, hh), Image.BILINEAR).save(OUT / "height.png", optimize=True)
-    tw = 2048
+    tw = TW
     th = round(h * tw / w)
     sat.resize((tw, th), Image.LANCZOS).save(OUT / "sat.jpg", quality=86, optimize=True)
     # India mask on the heightmap grid
@@ -67,9 +71,9 @@ def main():
     feat = next(f for f in india["features"] if f["properties"].get("kind") == "india")
     polys = feat["geometry"]["coordinates"] if feat["geometry"]["type"] == "MultiPolygon" else [feat["geometry"]["coordinates"]]
     scale = hw / (px[2] - px[0])
-    mask = Image.new("L", (hw, hh), 0)
+    mask = Image.new("L", (hw, hh), 255 if REGION else 0)
     d = ImageDraw.Draw(mask)
-    for poly in polys:
+    for poly in ([] if REGION else polys):  # the region is a full rectangular slab
         ring = [((merc(lon, lat)[0] - px[0]) * scale, (merc(lon, lat)[1] - px[1]) * scale) for lon, lat in poly[0]]
         if len(ring) > 2:
             d.polygon(ring, fill=255)

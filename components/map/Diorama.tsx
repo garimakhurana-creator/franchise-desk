@@ -18,6 +18,8 @@ export interface DioramaProps {
   hint?: string;
   /** Slowly swing the view around India while nobody is touching it. */
   autoRotate?: boolean;
+  /** Close-up of the territory region (default) or the whole of India. */
+  view?: "region" | "india";
 }
 
 interface Meta {
@@ -28,9 +30,13 @@ interface Meta {
 }
 
 const WIDTH = 10; // world units across the model
-const EXAGGERATION = 16; // relief exaggeration so the land reads at country scale
-const BASE_Y = -0.22; // depth of the cut walls
-const STEP = 2; // heightmap pixels per mesh cell
+// India: the whole country cut to its outline. Region: a close-up rectangular slab of the territory region
+// (Karnataka with a margin), thick rock walls in front, framed to fill the screen.
+const STRATA = ["#9b7b57", "#c4a47c", "#7a5c3e", "#b39168", "#8c6d4c", "#d1b48c"].map((c) => new THREE.Color(c));
+const MODES = {
+  india: { dir: "/diorama/", ex: 16, base: -0.22, step: 2, strata: 260 },
+  region: { dir: "/diorama/region/", ex: 7, base: -1.1, step: 1, strata: 9 },
+};
 
 function loadImage(src: string): Promise<HTMLImageElement> {
   return new Promise((res, rej) => {
@@ -59,7 +65,7 @@ function mercY(lat: number, z: number) {
   return (0.5 - Math.log((1 + s) / (1 - s)) / (4 * Math.PI)) * 2 ** z * 256;
 }
 
-export default function Diorama({ points, activeKey, onPick, reducedMotion, onFail, hint, autoRotate }: DioramaProps) {
+export default function Diorama({ points, activeKey, onPick, reducedMotion, onFail, hint, autoRotate, view = "region" }: DioramaProps) {
   const host = useRef<HTMLDivElement>(null);
   const tagLayer = useRef<HTMLDivElement>(null);
   const lineLayer = useRef<SVGSVGElement>(null);
@@ -80,9 +86,20 @@ export default function Diorama({ points, activeKey, onPick, reducedMotion, onFa
     (async () => {
       try {
         const test = document.createElement("canvas");
-        if (!(test.getContext("webgl2") || test.getContext("webgl"))) throw new Error("WebGL is not available");
-        const meta: Meta = await fetch("/diorama/meta.json").then((r) => r.json());
-        const [hImg, mImg, sat] = await Promise.all([loadImage("/diorama/height.png"), loadImage("/diorama/mask.png"), new THREE.TextureLoader().loadAsync("/diorama/sat.jpg")]);
+        const probe = (test.getContext("webgl2") || test.getContext("webgl")) as WebGLRenderingContext | null;
+        if (!probe) throw new Error("WebGL is not available");
+        // software rendering (no GPU) cannot keep a detailed 3D scene smooth: the flat map is faster and clearer there
+        const info = probe.getExtension("WEBGL_debug_renderer_info");
+        const gpu = info ? String(probe.getParameter(info.UNMASKED_RENDERER_WEBGL)) : "";
+        probe.getExtension("WEBGL_lose_context")?.loseContext();
+        if (/swiftshader|llvmpipe|software|basic render/i.test(gpu)) throw new Error(`software rendering (${gpu.slice(0, 40)})`);
+        const M = MODES[view];
+        const narrow = el.clientWidth < 640;
+        const EXAGGERATION = M.ex;
+        const BASE_Y = M.base;
+        const STEP = view === "region" && narrow ? 2 : M.step; // lighter mesh on phones
+        const meta: Meta = await fetch(`${M.dir}meta.json`).then((r) => r.json());
+        const [hImg, mImg, sat] = await Promise.all([loadImage(`${M.dir}height.png`), loadImage(`${M.dir}mask.png`), new THREE.TextureLoader().loadAsync(`${M.dir}sat.jpg`)]);
         if (disposed) return;
         const W = meta.height.w;
         const H = meta.height.h;
@@ -141,15 +158,22 @@ export default function Diorama({ points, activeKey, onPick, reducedMotion, onFa
         const pushV = (x: number, y: number, z: number) => {
           wpos.push(x, y, z);
           const t = Math.min(1, Math.max(0, (y - BASE_Y) / (0.06 - BASE_Y)));
-          const band = Math.sin(y * 260) * 0.06; // faint strata
-          const col = deep.clone().lerp(sand, t * 0.9 + 0.1).offsetHSL(0, 0, band);
+          // wavy rock strata: bands of sandstone tones that undulate along the wall
+          const k = y * M.strata + Math.sin(x * 1.9) * 0.9 + Math.sin(x * 5.3 + z * 3.1) * 0.25;
+          const layer = STRATA[((Math.floor(k) % STRATA.length) + STRATA.length) % STRATA.length];
+          const col = deep.clone().lerp(sand, t * 0.75 + 0.25).lerp(layer, 0.55).offsetHSL(0, 0, Math.sin(k * 6.28) * 0.025);
           wcol.push(col.r, col.g, col.b);
         };
+        const SEG = view === "region" ? 44 : 1; // vertical slices so the strata can show
         const wall = (k1: number, k2: number) => {
           const [x1, y1, z1] = [pos[k1 * 3], pos[k1 * 3 + 1], pos[k1 * 3 + 2]];
           const [x2, y2, z2] = [pos[k2 * 3], pos[k2 * 3 + 1], pos[k2 * 3 + 2]];
-          pushV(x1, y1, z1); pushV(x1, BASE_Y, z1); pushV(x2, y2, z2);
-          pushV(x2, y2, z2); pushV(x1, BASE_Y, z1); pushV(x2, BASE_Y, z2);
+          for (let i = 0; i < SEG; i++) {
+            const a1 = y1 + ((BASE_Y - y1) * i) / SEG, b1 = y1 + ((BASE_Y - y1) * (i + 1)) / SEG;
+            const a2 = y2 + ((BASE_Y - y2) * i) / SEG, b2 = y2 + ((BASE_Y - y2) * (i + 1)) / SEG;
+            pushV(x1, a1, z1); pushV(x1, b1, z1); pushV(x2, a2, z2);
+            pushV(x2, a2, z2); pushV(x1, b1, z1); pushV(x2, b2, z2);
+          }
         };
         const basePos: number[] = [];
         for (let r = 0; r < rows - 1; r++)
@@ -205,19 +229,20 @@ export default function Diorama({ points, activeKey, onPick, reducedMotion, onFa
 
         // ---- camera: looking at India from the south, Karnataka in front ----
         // phones frame south India closely so the territory tags have room; wide screens show the whole country
-        const narrow = el.clientWidth < 640;
-        const target = narrow ? new THREE.Vector3(-1.7, 0, 2.3) : new THREE.Vector3(0.1, 0, 0.55);
+        const region = view === "region";
+        const target = region ? (narrow ? new THREE.Vector3(-0.2, 0, 0.3) : new THREE.Vector3(0, -0.45, 0.8)) : narrow ? new THREE.Vector3(-1.7, 0, 2.3) : new THREE.Vector3(0.1, 0, 0.55);
         const controls = new OrbitControls(camera, renderer.domElement);
         controls.target.copy(target);
         controls.enableDamping = true;
         controls.dampingFactor = 0.08;
-        controls.minDistance = 3.2;
+        controls.minDistance = region ? 2 : 3.2;
         controls.maxDistance = 17;
         controls.minPolarAngle = 0.25;
-        controls.maxPolarAngle = 1.15;
+        controls.maxPolarAngle = region ? 1.32 : 1.15;
         controls.enablePan = true;
         controls.screenSpacePanning = false;
-        const endPos = narrow ? new THREE.Vector3(-1.3, 5.6, 8.6) : new THREE.Vector3(0.3, 9.4, 12.4);
+        // region: a low view from the south over the front wall, wide enough that the slab spans the screen
+        const endPos = region ? (narrow ? new THREE.Vector3(0, 10.5, 12.5) : new THREE.Vector3(0, 4.1, 9.6)) : narrow ? new THREE.Vector3(-1.3, 5.6, 8.6) : new THREE.Vector3(0.3, 9.4, 12.4);
         camera.position.copy(reducedMotion ? endPos : new THREE.Vector3(2.2, 15.5, 17.5));
         camera.lookAt(target);
 
@@ -387,9 +412,9 @@ export default function Diorama({ points, activeKey, onPick, reducedMotion, onFa
           if (latest.current.autoRotate && !reducedMotion && introT >= 1 && !touching && t - idleSince > 4000) {
             off.copy(camera.position).sub(controls.target);
             sph.setFromVector3(off);
-            if (baseTheta === null) baseTheta = sph.theta - 0.3 * Math.sin(swingT);
+            if (baseTheta === null) baseTheta = sph.theta - (region ? 0.16 : 0.3) * Math.sin(swingT);
             swingT += (2 * Math.PI) / (40 * 60);
-            sph.theta = baseTheta + 0.3 * Math.sin(swingT);
+            sph.theta = baseTheta + (region ? 0.16 : 0.3) * Math.sin(swingT);
             camera.position.copy(controls.target).add(off.setFromSpherical(sph));
             camera.lookAt(controls.target);
             dirty = true;
