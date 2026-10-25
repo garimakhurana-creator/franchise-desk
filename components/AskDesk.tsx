@@ -37,6 +37,8 @@ export const AskDesk = forwardRef<HTMLInputElement, { turns: Turn[]; busy: boole
     if (!m.trim() || busy) return;
     onSend(m);
     setText("");
+    const el = document.getElementById("ask") as HTMLInputElement | null;
+    if (el) el.value = "";
   };
   const chips = suggestions(result);
 
@@ -85,14 +87,16 @@ export const AskDesk = forwardRef<HTMLInputElement, { turns: Turn[]; busy: boole
             className="flex items-center gap-2 p-2.5"
             onSubmit={(e) => {
               e.preventDefault();
-              submit(text);
+              // uncontrolled input: the browser owns the value, so a fast Enter is never lost while the map is busy
+              const v = (e.currentTarget.elements.namedItem("ask") as HTMLInputElement | null)?.value ?? text;
+              submit(v);
             }}
           >
             <label htmlFor="ask" className="sr-only">Ask the desk</label>
             <input
               ref={ref}
               id="ask"
-              value={text}
+              defaultValue=""
               onChange={(e) => setText(e.target.value)}
               placeholder={pending ? 'What-if ready: say "apply" to commit, or ask something else' : "Ask the desk: “Why is APP-007 on hold?” or give news: “APP-012 found a ground-floor space”"}
               className="min-w-0 flex-1 bg-transparent px-2 py-2 text-[15px] placeholder:text-muted focus:outline-none"
@@ -105,7 +109,7 @@ export const AskDesk = forwardRef<HTMLInputElement, { turns: Turn[]; busy: boole
               </button>
             )}
             <kbd className="hidden md:inline rounded border border-line px-1.5 text-[11px] text-muted" title="Press / to focus">/</kbd>
-            <button type="submit" disabled={busy || !text.trim()} className="grid size-10 place-items-center rounded-full disabled:opacity-40" style={{ background: "var(--gold)", color: "var(--on-gold)" }} aria-label="Send">
+            <button type="submit" aria-disabled={busy || !text.trim()} className="grid size-10 place-items-center rounded-full aria-disabled:opacity-40" style={{ background: "var(--gold)", color: "var(--on-gold)" }} aria-label="Send">
               <Icon.Send />
             </button>
           </form>

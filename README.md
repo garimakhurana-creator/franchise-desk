@@ -30,7 +30,7 @@ browser (everything that decides)                 server (optional)
 | Server asleep or unreachable | Everything: parsing, decisions, cards, table, export and the rule-based desk run in the browser. |
 | Bad file | A friendly message naming exactly what is missing; unreadable cells become flagged issues, never a crash. |
 
-Verified by `scripts/acceptance.ts` in three modes (live, API returning 503, API unreachable).
+Verified by `scripts/acceptance.ts` in four modes: live, API returning 503, API unreachable, and a slow high-latency connection.
 
 ## Run locally
 
@@ -58,11 +58,13 @@ Deploy only after acceptance passes on a local production build of the same comm
 vercel deploy --prod
 ```
 
-One-command rollback to the previous production deployment:
+One-command rollback: promote the previous good deployment (list them with `vercel ls --prod`):
 
 ```bash
-vercel rollback
+vercel promote https://franchise-desk-<previous>-garima20.vercel.app --yes
 ```
+
+This was exercised for real once: a build that passed locally failed live acceptance (a typing race while the map loaded on a slow connection), production was promoted back within a minute, the bug was fixed, and a slow-network mode was added to acceptance.
 
 ## Documents
 

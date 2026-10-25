@@ -52,12 +52,18 @@ async function ask(page: Page, text: string) {
   await page.waitForFunction((n) => document.querySelectorAll('[data-testid="desk-reply"]').length > n, before, { timeout: 15000 });
 }
 
-async function runMode(mode: "live" | "no-key" | "no-server") {
+async function runMode(mode: "live" | "no-key" | "no-server" | "slow-network") {
   const browser = await chromium.launch();
   const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
   if (mode === "no-key") await ctx.route("**/api/**", (r) => r.fulfill({ status: 503, contentType: "application/json", body: JSON.stringify({ ok: true, ai: false }) }));
   if (mode === "no-server") await ctx.route("**/api/**", (r) => r.abort("connectionrefused"));
   const page = await ctx.newPage();
+  if (mode === "slow-network") {
+    // high latency and low bandwidth: the map loads slowly while the judge is already typing
+    const cdp = await ctx.newCDPSession(page);
+    await cdp.send("Network.enable");
+    await cdp.send("Network.emulateNetworkConditions", { offline: false, latency: 250, downloadThroughput: 200_000, uploadThroughput: 100_000 });
+  }
   const fails: string[] = [];
   try {
     await upload(page, GOLDEN);
@@ -67,7 +73,7 @@ async function runMode(mode: "live" | "no-key" | "no-server") {
     const badge = await page.textContent("body");
     if (!/Pin rule verified/.test(badge ?? "")) fails.push("pin-rule badge missing");
 
-    for (const s of SCRIPTS) {
+    for (const s of mode === "slow-network" ? SCRIPTS.slice(0, 5) : SCRIPTS) {
       await upload(page, GOLDEN);
       for (const step of s.steps) await ask(page, step);
       const text = (await page.locator('[data-testid="desk-reply"]').allInnerTexts()).join("\n");
@@ -84,7 +90,7 @@ async function runMode(mode: "live" | "no-key" | "no-server") {
     const n = Object.keys(await statuses(page)).length;
     if (n < 500) fails.push(`stress rows ${n}`);
     console.log(`  stress500: ${n} rows rendered in ${ms} ms (including page load)`);
-    if (ms > 8000) fails.push(`stress too slow: ${ms} ms`);
+    if (ms > (mode === "slow-network" ? 30000 : 8000)) fails.push(`stress too slow: ${ms} ms`);
   } catch (e) {
     fails.push(`crash: ${(e as Error).message.split("\n")[0]}`);
   } finally {
@@ -96,7 +102,7 @@ async function runMode(mode: "live" | "no-key" | "no-server") {
 (async () => {
   console.log(`Acceptance against ${BASE}`);
   let total = 0;
-  for (const mode of ["live", "no-key", "no-server"] as const) {
+  for (const mode of ["live", "no-key", "no-server", "slow-network"] as const) {
     const fails = await runMode(mode);
     total += fails.length;
     console.log(`${fails.length ? "FAIL" : "PASS"} ${mode}${fails.length ? "\n  - " + fails.join("\n  - ") : ""}`);
