@@ -72,7 +72,15 @@ export interface Store {
   year: number | null;
 }
 
+export interface CityRef {
+  city: string;
+  state?: string;
+  prefix: string;
+  tier: Tier;
+}
+
 export interface Dataset {
+  cities?: CityRef[];
   applications: Application[];
   territories: Territory[];
   stores: Store[];
@@ -231,6 +239,9 @@ export interface RunContext {
   pinned: Record<string, string>; // applicant key -> pin (approved partners locked in)
   swapNotes?: Record<string, string>; // displaced key -> displacing ID
   dayOffset?: number; // simulate N days passing
+  lapsed?: string[]; // keys whose 30-day conditional reservation lapsed
+  closedHolds?: string[]; // keys whose hold closed after 14 days of silence
+  previous?: Record<string, Status>; // statuses before this re-run (for "promoted" wording)
   simulation?: boolean;
 }
 

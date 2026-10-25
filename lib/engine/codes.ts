@@ -31,6 +31,12 @@ export const REASON_CODES = [
   "TARGET_INFEASIBLE",
   "DENSITY_CAP",
   "CONTESTED",
+  // Extensions (documented in ASSUMPTIONS.md): data problems the vocabulary above has no code for.
+  "DATA_MISSING",
+  "DATA_INVALID",
+  "DUPLICATE_ID",
+  "NOTE_CONFLICT",
+  "EXPERIENCE_CONFLICT",
 ] as const;
 
 export type ReasonCode = (typeof REASON_CODES)[number];
@@ -66,6 +72,11 @@ export const CODE_LABEL: Record<ReasonCode, string> = {
   TARGET_INFEASIBLE: "Target date is too early",
   DENSITY_CAP: "City store count above guide",
   CONTESTED: "Outranks an approved partner",
+  DATA_MISSING: "A required detail is blank",
+  DATA_INVALID: "A value cannot be read",
+  DUPLICATE_ID: "Two rows share one ID",
+  NOTE_CONFLICT: "Note disagrees with the form",
+  EXPERIENCE_CONFLICT: "Experience figures disagree",
 };
 
 /** Codes that are integrity signals: route to a check, never decline. */

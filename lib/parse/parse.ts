@@ -189,6 +189,27 @@ export function parseWorkbook(sheets: SheetData[], fileName = "upload.xlsx", sou
     notes.push({ sheet: "Existing stores", message: "No Existing stores sheet found, so the fixed list of 10 stores from the case template was used.", severity: "info" });
   }
 
+  // ---------- Allowed values (city -> pin prefix -> tier) ----------
+  let cities: Dataset["cities"];
+  const allowed = findSheet(sheets, ["allowed"], "Pin codes start with");
+  if (allowed) {
+    const hi = findHeaderRow(allowed, "Pin codes start with");
+    const ccols = mapColumns(allowed.rows[hi], { city: ["city"], state: ["state"], prefix: ["pin codes start with"], tier: ["city tier", "tier"] });
+    const list: NonNullable<Dataset["cities"]> = [];
+    for (let i = hi + 1; i < allowed.rows.length; i++) {
+      const r = allowed.rows[i] ?? [];
+      const city = cellText(r[ccols.city]);
+      const prefix = cellText(r[ccols.prefix]).replace(/\D/g, "");
+      const tier = parseTier(r[ccols.tier]);
+      if (city && prefix.length === 3 && tier) list.push({ city, state: cellText(r[ccols.state]) || undefined, prefix, tier });
+    }
+    if (list.length) cities = list;
+  }
+  if (!cities) {
+    cities = reference.cities.map((c) => ({ ...c, tier: c.tier as 1 | 2 | 3 }));
+    notes.push({ sheet: "Allowed values", message: "No Allowed values sheet found, so the city, pin-prefix and tier list from the case template was used.", severity: "info" });
+  }
+
   // ---------- Cross-sheet checks ----------
   const pinOwner = new Map<string, string[]>();
   for (const t of territories) for (const p of t.pins) pinOwner.set(p, [...(pinOwner.get(p) ?? []), t.id]);
@@ -200,6 +221,7 @@ export function parseWorkbook(sheets: SheetData[], fileName = "upload.xlsx", sou
   }
 
   return {
+    cities,
     applications,
     territories,
     stores,

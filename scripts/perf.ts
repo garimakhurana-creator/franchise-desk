@@ -1,0 +1,10 @@
+import { readFileSync } from "node:fs";
+import { readWorkbook } from "../lib/parse/xlsx";
+import { parseWorkbook } from "../lib/parse/parse";
+import { run, DEFAULT_POLICY } from "../lib/engine";
+const t0 = performance.now();
+const ds = parseWorkbook(readWorkbook(new Uint8Array(readFileSync("tests/golden/stress500.xlsx"))), "s");
+const t1 = performance.now();
+for (let i = 0; i < 3; i++) run(ds, DEFAULT_POLICY, { today: "2026-10-25", pinned: {} });
+const t2 = performance.now();
+console.log(`parse ${(t1 - t0).toFixed(0)} ms, run ${((t2 - t1) / 3).toFixed(0)} ms`);
