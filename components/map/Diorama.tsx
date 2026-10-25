@@ -6,15 +6,16 @@
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
-import type { RunResult, Status } from "@/lib/engine/types";
-import { buildTerrainData, type Callout } from "@/lib/map/terrain";
+import type { MapPoint } from "@/lib/map/terrain";
 import { escapeHtml } from "@/lib/map/data";
 
 export interface DioramaProps {
-  result: RunResult;
-  onDeepDive: (territoryKey: string | null, lngLat: [number, number]) => void;
+  points: MapPoint[];
+  activeKey?: string | null;
+  onPick: (key: string) => void;
   reducedMotion: boolean;
   onFail: (reason: string) => void;
+  hint?: string;
 }
 
 interface Meta {
@@ -24,8 +25,6 @@ interface Meta {
   sources: string;
 }
 
-const STATUS_HEX: Record<Status, string> = { APPROVED: "#2fbf8f", CONDITIONAL: "#4fc3d9", WAITLISTED: "#9aa6d3", ON_HOLD: "#e39a3b", DECLINED: "#e2685f", WITHDRAWN: "#8a989e" };
-const STATUS_ORDER: Status[] = ["APPROVED", "CONDITIONAL", "WAITLISTED", "ON_HOLD", "DECLINED", "WITHDRAWN"];
 const WIDTH = 10; // world units across the model
 const EXAGGERATION = 16; // relief exaggeration so the land reads at country scale
 const BASE_Y = -0.22; // depth of the cut walls
@@ -58,13 +57,13 @@ function mercY(lat: number, z: number) {
   return (0.5 - Math.log((1 + s) / (1 - s)) / (4 * Math.PI)) * 2 ** z * 256;
 }
 
-export default function Diorama({ result, onDeepDive, reducedMotion, onFail }: DioramaProps) {
+export default function Diorama({ points, activeKey, onPick, reducedMotion, onFail, hint }: DioramaProps) {
   const host = useRef<HTMLDivElement>(null);
   const tagLayer = useRef<HTMLDivElement>(null);
   const lineLayer = useRef<SVGSVGElement>(null);
-  const latest = useRef({ result, onDeepDive, onFail });
-  latest.current = { result, onDeepDive, onFail };
-  const api = useRef<{ setCallouts: (c: Callout[]) => void } | null>(null);
+  const latest = useRef({ points, onPick, onFail, activeKey });
+  latest.current = { points, onPick, onFail, activeKey };
+  const api = useRef<{ setCallouts: (c: MapPoint[]) => void; setActive: (k: string | null | undefined) => void } | null>(null);
 
   useEffect(() => {
     const el = host.current;
@@ -223,7 +222,7 @@ export default function Diorama({ result, onDeepDive, reducedMotion, onFail }: D
         let dirty = true; // redraw on the next frame
 
         // ---- pins and tags ----
-        type Pin = { c: Callout; anchor: THREE.Vector3; el: HTMLButtonElement; line: SVGLineElement; foot: SVGCircleElement };
+        type Pin = { c: MapPoint; anchor: THREE.Vector3; el: HTMLButtonElement; line: SVGLineElement; foot: SVGCircleElement };
         const SVG = "http://www.w3.org/2000/svg";
         let pins: Pin[] = [];
         const anchorFor = (lng: number, lat: number) => {
@@ -235,7 +234,7 @@ export default function Diorama({ result, onDeepDive, reducedMotion, onFail }: D
         const pinMat = new THREE.MeshBasicMaterial({ color: "#f5c451" });
         const pinGroup = new THREE.Group();
         scene.add(pinGroup);
-        const setCallouts = (callouts: Callout[]) => {
+        const setCallouts = (callouts: MapPoint[]) => {
           pins.forEach((p) => {
             p.el.remove();
             p.line.remove();
@@ -250,32 +249,32 @@ export default function Diorama({ result, onDeepDive, reducedMotion, onFail }: D
             const b = document.createElement("button");
             b.type = "button";
             // the tag itself is the button; its leader line is drawn in the SVG layer underneath all tags
-            b.className = `tm-tag dio-tag${c.noTerritory ? " is-orphan" : ""}`;
+            b.className = `tm-tag dio-tag${c.muted ? " is-orphan" : ""}${latest.current.activeKey === c.key ? " is-active" : ""}`;
+            b.dataset.key = c.key;
             b.style.position = "absolute";
             b.style.left = "0";
             b.style.top = "0";
             b.style.setProperty("--d", `${reducedMotion ? 0 : 1.2 + i * 0.12}s`);
-            b.setAttribute("aria-label", `${c.title} ${c.place}: ${c.requests} requests. Open this area.`);
-            const bar = STATUS_ORDER.filter((s) => c.counts[s]).map((s) => `<i style="flex:${c.counts[s]};background:${STATUS_HEX[s]}"></i>`).join("");
-            const slots = c.noTerritory ? "no open territory" : `${c.used}/${c.capacity} slots${c.wanted > c.capacity ? ` · ${c.wanted} wanted` : ""}`;
-            b.innerHTML = `<span class="tm-title"><b>${escapeHtml(c.title)}</b> ${escapeHtml(c.place)}</span><span class="tm-sub"><span class="tm-req">${c.requests}</span> request${c.requests === 1 ? "" : "s"} · ${escapeHtml(slots)}</span><span class="tm-bar">${bar}</span>`;
-            b.addEventListener("click", () => latest.current.onDeepDive(c.noTerritory ? null : c.key, c.lngLat));
+            b.setAttribute("aria-label", `${c.title}, ${c.place}. Open`);
+            b.innerHTML = `<span class="tm-title"><b>${escapeHtml(c.title)}</b> ${escapeHtml(c.place)}</span>`;
+            b.addEventListener("click", () => latest.current.onPick(c.key));
             layer.appendChild(b);
             const line = document.createElementNS(SVG, "line");
-            line.setAttribute("stroke", c.noTerritory ? "#d9d6cf" : "#fbfaf6");
+            line.setAttribute("stroke", c.muted ? "#d9d6cf" : "#fbfaf6");
             line.setAttribute("stroke-width", "1.5");
             line.setAttribute("opacity", "0.9");
             const foot = document.createElementNS(SVG, "circle");
             foot.setAttribute("r", "3.5");
-            foot.setAttribute("fill", c.noTerritory ? "#d9d6cf" : "#fbfaf6");
+            foot.setAttribute("fill", c.muted ? "#d9d6cf" : "#fbfaf6");
             lines.appendChild(line);
             lines.appendChild(foot);
             return { c, anchor, el: b, line, foot };
           });
           dirty = true;
         };
-        api.current = { setCallouts };
-        setCallouts(buildTerrainData(latest.current.result).callouts);
+        const setActive = (k: string | null | undefined) => pins.forEach((p) => p.el.classList.toggle("is-active", p.c.key === k));
+        api.current = { setCallouts, setActive };
+        setCallouts(latest.current.points);
 
         // place tags over their pins; tags that would collide rise on taller poles or slide sideways
         const v = new THREE.Vector3();
@@ -391,8 +390,12 @@ export default function Diorama({ result, onDeepDive, reducedMotion, onFail }: D
 
   // follow-ups change request counts: refresh the tags without rebuilding the model
   useEffect(() => {
-    api.current?.setCallouts(buildTerrainData(result).callouts);
-  }, [result]);
+    api.current?.setCallouts(points);
+  }, [points]);
+
+  useEffect(() => {
+    api.current?.setActive(activeKey);
+  }, [activeKey]);
 
   return (
     <div className="relative h-full w-full overflow-hidden" style={{ background: "radial-gradient(70% 60% at 50% 42%, #1c2533 0%, #0a0f16 62%, #05080c 100%)" }}>
@@ -400,7 +403,7 @@ export default function Diorama({ result, onDeepDive, reducedMotion, onFail }: D
       <svg ref={lineLayer} className="pointer-events-none absolute inset-0 h-full w-full" aria-hidden />
       <div ref={tagLayer} className="pointer-events-none absolute inset-0" style={{ left: 0, top: 0 }} />
       <p className="pointer-events-none absolute bottom-2 right-3 text-[10.5px] text-white/45">Elevation: AWS Terrain Tiles · Imagery: Sentinel-2 cloudless by EOX · Relief exaggerated</p>
-      <p className="pointer-events-none absolute left-3 top-3 rounded-md bg-black/40 px-2.5 py-1 text-[12px] text-white/80">Drag to rotate · scroll to zoom · click a territory to open it</p>
+      <p className="pointer-events-none absolute left-3 top-3 rounded-md bg-black/40 px-2.5 py-1 text-[12px] text-white/80">{hint ?? "Drag to rotate · scroll to zoom · click a territory to see its requests"}</p>
     </div>
   );
 }

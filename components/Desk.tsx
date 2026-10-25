@@ -9,7 +9,7 @@ import { readWorkbook, MAX_FILE_BYTES } from "@/lib/parse/xlsx";
 import { parseRules } from "@/lib/chat/rules";
 import { respond, replyText, type ChatState, type Reply } from "@/lib/chat/respond";
 import { ParsedSchema, type Parsed } from "@/lib/chat/commands";
-import type { Dataset, RunResult, Status } from "@/lib/engine/types";
+import type { Dataset, Decision, RunResult, Status } from "@/lib/engine/types";
 import { Icon } from "./icons";
 import { EmptyState } from "./EmptyState";
 import { ResultsTable } from "./ResultsTable";
@@ -19,7 +19,9 @@ import { Drawer, PolicyPanel, MethodPanel, DataNotesPanel } from "./Panels";
 import { SelfTestPanel, TowerPanel } from "./TowerPanels";
 import { HudStats } from "./hud/HudStats";
 import { Sidebar } from "./hud/Sidebar";
-import { buildTerrainData } from "@/lib/map/terrain";
+import { buildTerrainData, territoryPoints } from "@/lib/map/terrain";
+import { centroid } from "@/lib/engine/geo";
+import { RequestsPanel, LocationPanel } from "./map/TerritoryPanels";
 import { selfTest } from "@/lib/engine/selftest";
 import { controlTower } from "@/lib/engine/tower";
 
@@ -404,54 +406,84 @@ const TerrainMap = dynamic(() => import("./map/TerrainMap"), {
 
 /** The world behind the HUD. Optional by design: any failure leaves a calm backdrop and the roster carries everything. */
 function WorldMap({ result, selected, highlight, onSelect, activeTerritory, onPickTerritory }: { result: RunResult; selected: string | null; highlight: string[]; onSelect: (k: string) => void; activeTerritory: string | null; onPickTerritory: (k: string | null) => void }) {
-  // Overview: India as a 3D diorama with territory tags. Deep dive: the live map at street level.
+  // India in 3D with territory names. Click a territory: its new requests. Click a request: its location, coordinates and satellite view.
   const [mode, setMode] = useState<"overview" | "explore">("overview");
-  const [focus, setFocus] = useState<[number, number] | null>(null);
+  const [focus, setFocus] = useState<{ at: [number, number]; zoom: number } | null>(null);
+  const [openKey, setOpenKey] = useState<string | null>(null);
+  const [request, setRequest] = useState<string | null>(null);
   const [failed, setFailed] = useState<string | null>(null);
   const [reduced, setReduced] = useState(false);
   useEffect(() => setReduced(window.matchMedia("(prefers-reduced-motion: reduce)").matches), []);
-  // picking a territory anywhere (sidebar or tag) opens it on the live map
+  const points = useMemo(() => territoryPoints(result), [result]);
+  // picking a territory in the sidebar opens its requests too
   useEffect(() => {
-    if (!activeTerritory) return;
-    const c = buildTerrainData(result).callouts.find((x) => x.key === activeTerritory);
+    if (activeTerritory) {
+      setOpenKey(activeTerritory);
+      setRequest(null);
+    }
+  }, [activeTerritory]);
+  const openTerritory = (key: string | null) => {
+    setOpenKey(key);
+    setRequest(null);
+    if (!key?.startsWith("city:")) onPickTerritory(key);
+  };
+  const deepDive = (d: Decision) => {
+    const c = centroid(d.allocatedPin ?? d.pin);
+    setRequest(d.key);
     if (c) {
-      setFocus(c.lngLat);
+      setFocus({ at: [c.lon, c.lat], zoom: 14.5 });
       setMode("explore");
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTerritory]);
+  };
+  const exploreTerritory = () => {
+    const p = points.find((x) => x.key === openKey);
+    if (!p) return;
+    setFocus({ at: p.lngLat, zoom: 10.6 });
+    setMode("explore");
+  };
+  const backToIndia = () => {
+    setMode("overview");
+    setRequest(null);
+  };
+  const requestDecision = request ? result.decisions.find((d) => d.key === request) ?? null : null;
   return (
-    <div className="relative h-[55vh] w-full min-h-[340px] lg:h-auto lg:flex-1" aria-label="Map of India with territories, stores and applications" style={{ background: "radial-gradient(90% 70% at 55% 35%, #1a2232 0%, #060a10 70%)" }}>
+    <div className="relative h-[60vh] w-full min-h-[380px] lg:h-auto lg:flex-1" aria-label="Map of India with territories, stores and applications" style={{ background: "radial-gradient(90% 70% at 55% 35%, #1a2232 0%, #060a10 70%)" }}>
       {mode === "overview" ? (
         <Diorama
-          result={result}
+          points={points}
+          activeKey={openKey}
           reducedMotion={reduced}
           onFail={(r) => {
             console.warn("3D overview unavailable, showing the live map:", r);
             setMode("explore");
           }}
-          onDeepDive={(key, lngLat) => {
-            setFocus(lngLat);
-            setMode("explore");
-            if (key) onPickTerritory(key);
-          }}
+          onPick={(key) => openTerritory(key)}
         />
       ) : (
         <>
-          {!failed && <TerrainMap result={result} selected={selected} highlight={highlight} onSelect={onSelect} theme="dark" reducedMotion={reduced} onFail={(r) => setFailed(r)} activeTerritory={activeTerritory} onPickTerritory={onPickTerritory} focus={focus} />}
+          {!failed && <TerrainMap result={result} selected={selected} highlight={highlight} onSelect={onSelect} theme="dark" reducedMotion={reduced} onFail={(r) => setFailed(r)} activeTerritory={activeTerritory} onPickTerritory={(k) => openTerritory(k)} focus={focus?.at ?? null} focusZoom={focus?.zoom} />}
           <div className="world-vignette pointer-events-none absolute inset-0" aria-hidden />
-          <button
-            type="button"
-            onClick={() => {
-              setMode("overview");
-              onPickTerritory(null);
-            }}
-            className="absolute left-1/2 top-3 z-[3] inline-flex -translate-x-1/2 items-center gap-1.5 rounded-full border border-white/15 bg-[#0c131c]/90 px-3.5 py-1.5 text-[12.5px] font-medium text-white shadow-lg hover:border-gold"
-          >
+          <button type="button" onClick={backToIndia} className="absolute left-3 top-3 z-[3] inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-[#0c131c]/90 px-3.5 py-1.5 text-[12.5px] font-medium text-white shadow-lg hover:border-gold">
             <span aria-hidden>←</span> Back to India
           </button>
           {failed && <p className="absolute bottom-24 left-1/2 -translate-x-1/2 text-[12px] text-muted">Map unavailable ({failed}). Every decision is in the list.</p>}
         </>
+      )}
+      {requestDecision ? (
+        <LocationPanel decision={requestDecision} onBack={() => setRequest(null)} onViewDecision={() => onSelect(requestDecision.key)} />
+      ) : (
+        openKey && (
+          <RequestsPanel
+            result={result}
+            territoryKey={openKey}
+            onOpenRequest={deepDive}
+            onExplore={exploreTerritory}
+            onClose={() => {
+              openTerritory(null);
+              onPickTerritory(null);
+            }}
+          />
+        )
       )}
     </div>
   );

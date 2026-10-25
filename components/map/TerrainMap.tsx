@@ -22,6 +22,8 @@ export interface TerrainMapProps {
   onFail: (reason: string) => void;
   /** Deep-dive target: open the map here instead of playing the India intro. */
   focus?: [number, number] | null;
+  /** How close the deep dive gets: about 10.6 for a territory, 14.5 for one applicant's pin. */
+  focusZoom?: number;
 }
 
 const STATUS_HEX: Record<Status, string> = { APPROVED: "#2fbf8f", CONDITIONAL: "#4fc3d9", WAITLISTED: "#9aa6d3", ON_HOLD: "#e39a3b", DECLINED: "#e2685f", WITHDRAWN: "#8a989e" };
@@ -83,7 +85,7 @@ export default function TerrainMap(props: TerrainMapProps) {
     let map: MLMap;
     try {
       // a deep dive opens straight at the territory, so only its tiles load
-      const start = props.focus ? { center: props.focus, zoom: 9.6, pitch: 50, bearing: -10 } : INDIA_VIEW;
+      const start = props.focus ? { center: props.focus, zoom: (props.focusZoom ?? 10.6) - 1, pitch: 50, bearing: -10 } : INDIA_VIEW;
       map = new maplibregl.Map({ container: el, style: style(props.theme), ...start, maxPitch: 72, maxZoom: 18, attributionControl: false, fadeDuration: 0 });
       // credits stay available behind an (i) button, collapsed so they never cover the console
       map.addControl(new maplibregl.AttributionControl({ compact: true }), "bottom-right");
@@ -249,11 +251,11 @@ export default function TerrainMap(props: TerrainMapProps) {
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !ready.current || !props.focus) return;
-    const to = { center: props.focus, zoom: Math.max(10.6, map.getZoom()), pitch: 55 };
+    const to = { center: props.focus, zoom: props.focusZoom ?? Math.max(10.6, map.getZoom()), pitch: 55 };
     if (props.reducedMotion) map.jumpTo(to);
     else map.flyTo({ ...to, duration: 1800, essential: true });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [props.focus?.[0], props.focus?.[1]]);
+  }, [props.focus?.[0], props.focus?.[1], props.focusZoom]);
 
   // Tags that would overlap rise to different heights, like peak labels on taller poles.
   function layoutCallouts(map: MLMap) {
@@ -331,7 +333,7 @@ export default function TerrainMap(props: TerrainMapProps) {
     const f = latest.current.focus;
     if (f && map.getContainer().clientHeight >= 80) {
       map.resize();
-      const to = { center: f, zoom: 10.6, pitch: 55, bearing: -10 };
+      const to = { center: f, zoom: latest.current.focusZoom ?? 10.6, pitch: 55, bearing: -10 };
       if (latest.current.reducedMotion) map.jumpTo(to);
       else {
         map.jumpTo({ center: f, zoom: 7.2, pitch: 40, bearing: 0 });

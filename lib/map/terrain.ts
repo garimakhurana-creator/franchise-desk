@@ -160,3 +160,24 @@ export function karnatakaBounds(result: RunResult): [[number, number], [number, 
   const ys = pts.map((p) => p[1]);
   return [[Math.min(...xs) - 0.4, Math.min(...ys) - 0.4], [Math.max(...xs) + 0.4, Math.max(...ys) + 0.4]];
 }
+
+/** A named place on the 3D overview: a territory, or a city when no file is loaded yet. Names only, no numbers. */
+export interface MapPoint {
+  key: string;
+  title: string;
+  place: string;
+  lngLat: [number, number];
+  muted?: boolean;
+}
+
+export function territoryPoints(result: RunResult): MapPoint[] {
+  return buildTerrainData(result).callouts.map((c) => ({ key: c.key, title: c.title, place: c.noTerritory ? `${c.place}` : c.place, lngLat: c.lngLat, muted: c.noTerritory }));
+}
+
+/** Before any upload: the expansion cities from the case template, so the first page already shows where the brand operates. */
+export function cityPoints(): MapPoint[] {
+  return reference.cities.flatMap((c) => {
+    const p = centroid(`${c.prefix}000`);
+    return p ? [{ key: `city:${c.city}`, title: c.city, place: `Tier ${c.tier}`, lngLat: [p.lon, p.lat] as [number, number] }] : [];
+  });
+}

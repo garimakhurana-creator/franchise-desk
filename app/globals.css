@@ -367,3 +367,8 @@ table td.num {
     font-size: 10.5px;
   }
 }
+.dio-tag.is-active {
+  border-color: #b7861a;
+  box-shadow: 0 0 0 2px #f2c14e, 0 8px 22px -8px #000c;
+  z-index: 3;
+}
