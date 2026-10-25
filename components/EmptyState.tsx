@@ -8,6 +8,7 @@ import { parseWorkbook } from "@/lib/parse/parse";
 import { readWorkbook } from "@/lib/parse/xlsx";
 import reference from "@/lib/engine/reference.json";
 
+const FlatIndia = dynamic(() => import("./map/FlatIndia"), { ssr: false });
 const Diorama = dynamic(() => import("./map/Diorama"), {
   ssr: false,
   loading: () => <div className="grid h-full place-items-center text-[13px] text-muted">Building the 3D view of India…</div>,
@@ -59,8 +60,8 @@ export function EmptyState({ onFile, onSample, error, loading }: { onFile: (f: F
       }}
     >
       {map3d && <Diorama points={points} activeKey={picked} onPick={(k) => setPicked((p) => (p === k ? null : k))} reducedMotion={reduced} onFail={() => setMap3d(false)} autoRotate hint="Drag to rotate · scroll to zoom" />}
-      {counts && map3d && <p className="pointer-events-none absolute right-3 top-3 z-[3] rounded-md border border-white/10 bg-black/50 px-2.5 py-1 text-[12px] text-white/85">Pin numbers: new requests in the <b>sample</b> file</p>}
-      {!map3d && <p className="grid h-full place-items-center text-[13px] text-muted">The 3D view needs WebGL. Upload still works.</p>}
+      {counts && <p className="pointer-events-none absolute right-3 top-3 z-[3] rounded-md border border-white/10 bg-black/50 px-2.5 py-1 text-[12px] text-white/85">Pin numbers: new requests in the <b>sample</b> file</p>}
+      {!map3d && <FlatIndia points={points} activeKey={picked} onPick={(k) => setPicked((p) => (p === k ? null : k))} />}
       {over && <div className="pointer-events-none absolute inset-3 z-[4] grid place-items-center rounded-2xl border-2 border-dashed border-[#b4a6ff] bg-[#8f7cff14] text-[16px] font-semibold text-white">Drop the Excel file to open it</div>}
       <div className="absolute inset-x-0 bottom-6 z-[5] flex flex-col items-center gap-2 px-4">
         {error && (

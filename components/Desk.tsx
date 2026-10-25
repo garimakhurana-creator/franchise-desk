@@ -411,6 +411,8 @@ function WorldMap({ result, selected, highlight, onSelect, activeTerritory, onPi
   const [openKey, setOpenKey] = useState<string | null>(null);
   const [request, setRequest] = useState<string | null>(null);
   const [failed, setFailed] = useState<string | null>(null);
+  // no WebGL: stay on the flat map; panels, coordinates and the satellite view still work
+  const [flat, setFlat] = useState(false);
   const [reduced, setReduced] = useState(false);
   useEffect(() => setReduced(window.matchMedia("(prefers-reduced-motion: reduce)").matches), []);
   const points = useMemo(() => territoryPoints(result), [result]);
@@ -422,7 +424,7 @@ function WorldMap({ result, selected, highlight, onSelect, activeTerritory, onPi
     const p = points.find((x) => x.key === key);
     if (!p) return;
     setFocus({ at: p.lngLat, zoom: 12 });
-    setMode("explore");
+    if (!flat) setMode("explore");
   };
   const openTerritory = (key: string | null) => {
     setOpenKey(key);
@@ -435,7 +437,7 @@ function WorldMap({ result, selected, highlight, onSelect, activeTerritory, onPi
     setRequest(d.key);
     if (c) {
       setFocus({ at: [c.lon, c.lat], zoom: 14.2 });
-      setMode("explore");
+      if (!flat) setMode("explore");
     }
   };
   // picking a territory in the sidebar does the same as clicking its tag
@@ -471,15 +473,17 @@ function WorldMap({ result, selected, highlight, onSelect, activeTerritory, onPi
   };
   return (
     <div className="relative h-[60vh] w-full min-h-[380px] lg:h-auto lg:flex-1" aria-label="Map of India with territories, stores and applications" style={{ background: "radial-gradient(90% 70% at 55% 35%, #191a2b 0%, #07070b 70%)" }}>
-      {mode === "overview" ? (
+      {flat ? (
+        <FlatIndia points={points} activeKey={openKey} onPick={(key) => openTerritory(key)} />
+      ) : mode === "overview" ? (
         <Diorama
           points={points}
           activeKey={openKey}
           reducedMotion={reduced}
           autoRotate
           onFail={(r) => {
-            console.warn("3D overview unavailable, showing the live map:", r);
-            setMode("explore");
+            console.warn("3D view unavailable, showing the flat map:", r);
+            setFlat(true);
           }}
           onPick={(key) => openTerritory(key)}
         />
@@ -525,6 +529,7 @@ function WorldMap({ result, selected, highlight, onSelect, activeTerritory, onPi
   );
 }
 
+const FlatIndia = dynamic(() => import("./map/FlatIndia"), { ssr: false });
 const Diorama = dynamic(() => import("./map/Diorama"), {
   ssr: false,
   loading: () => <div className="grid h-full place-items-center text-[13px] text-muted">Building the 3D view of India…</div>,
