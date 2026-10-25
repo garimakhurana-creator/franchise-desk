@@ -224,7 +224,7 @@ export default function Diorama({ points, activeKey, onPick, reducedMotion, onFa
         let dirty = true; // redraw on the next frame
 
         // ---- pins and tags ----
-        type Pin = { last?: { L: number; flip: boolean }; c: MapPoint; anchor: THREE.Vector3; el: HTMLButtonElement; line: SVGLineElement; foot: SVGCircleElement };
+        type Pin = { size?: [number, number]; last?: { flip: boolean; dy: number }; c: MapPoint; anchor: THREE.Vector3; el: HTMLButtonElement; line: SVGLineElement; foot: SVGCircleElement };
         const SVG = "http://www.w3.org/2000/svg";
         let pins: Pin[] = [];
         const anchorFor = (lng: number, lat: number) => {
@@ -276,7 +276,8 @@ export default function Diorama({ points, activeKey, onPick, reducedMotion, onFa
 
         // place tags over their pins; tags that would collide rise on taller poles or slide sideways
         const v = new THREE.Vector3();
-        const layout = () => {
+        // search: look for free spots (collision layout); otherwise keep each tag where it was and only follow the map
+        const layout = (search = true) => {
           const w = el.clientWidth;
           const h = el.clientHeight;
           const items = pins
@@ -285,28 +286,33 @@ export default function Diorama({ points, activeKey, onPick, reducedMotion, onFa
               return { p, x: (v.x * 0.5 + 0.5) * w, y: (-v.y * 0.5 + 0.5) * h, behind: v.z > 1 };
             })
             .sort((a, b) => b.y - a.y);
-          const placed: { x: number; y: number; w: number; h: number }[] = [];
+          // pins never move off their places: every pin sits exactly on its spot, and only the name label
+          // picks a side (and, in a tight cluster, a row just above or below) where it overlaps least
+          const P = 24;
+          const PH = 32;
+          const placed: { x: number; y: number; w: number; h: number }[] = items.filter((it) => !it.behind).map((it) => ({ x: it.x - P / 2, y: it.y - PH, w: P, h: PH }));
           for (const it of items) {
             const tag = it.p.el;
             const hidden = it.behind;
             tag.style.display = hidden ? "none" : "";
-            it.p.line.style.display = hidden ? "none" : "";
-            it.p.foot.style.display = hidden ? "none" : "";
-            const tw = tag.offsetWidth;
-            const th = tag.offsetHeight;
-            const P = 30; // pin width; its tip is at the bottom centre
-            const leftOf = (flip: boolean) => (flip ? it.x - tw + P / 2 : it.x - P / 2);
-            let best = { L: 0, flip: false };
-            const tries: { L: number; flip: boolean }[] = [];
-            if (it.p.last) tries.push({ L: it.p.last.L, flip: it.p.last.flip });
-            for (const L of [0, 22, 44, 68, 94, 122, 152]) for (const flip of [false, true]) tries.push({ L, flip });
-            // first spot that overlaps nothing; failing that, the one that overlaps least
+            it.p.line.style.display = "none";
+            it.p.foot.style.display = "none";
+            if (hidden) continue;
+            tag.style.zIndex = String(Math.round(it.y)); // nearer pins in front
+            const name = tag.querySelector<HTMLElement>(".dp-name")!;
+            if (!it.p.size || !it.p.size[0]) it.p.size = [name.offsetWidth, name.offsetHeight];
+            const [lw, lh] = it.p.size;
+            const row = lh + 3;
+            const labelRect = (t: { flip: boolean; dy: number }) => ({ x: t.flip ? it.x - P / 2 - 4 - lw : it.x + P / 2 + 4, y: it.y - 14 - lh + t.dy, w: lw, h: lh });
+            const tries: { flip: boolean; dy: number }[] = [];
+            if (it.p.last) tries.push(it.p.last);
+            for (const dy of [0, -row, row, -2 * row, 2 * row, -3 * row]) for (const flip of [false, true]) tries.push({ flip, dy });
+            let best = tries[0];
             let bestScore = Infinity;
-            let bestRect: { x: number; y: number; w: number; h: number } | null = null;
-            for (const t of tries) {
-              const r = { x: leftOf(t.flip) - 2, y: it.y - t.L - th - 2, w: tw + 4, h: th + 2 };
-              if (r.y < 6) continue;
-              let score = (r.x < 4 ? 4 - r.x : 0) * 50 + (r.x + r.w > w - 4 ? r.x + r.w - w + 4 : 0) * 50 + t.L * 0.5;
+            let bestRect = labelRect(best);
+            for (const t of search || !it.p.last ? tries : tries.slice(0, 1)) {
+              const r = labelRect(t);
+              let score = (r.x < 4 ? 4 - r.x : 0) * 50 + (r.x + r.w > w - 4 ? r.x + r.w - w + 4 : 0) * 50 + (r.y < 4 ? 4 - r.y : 0) * 50 + Math.abs(t.dy) * 0.4;
               for (const q of placed) {
                 const ox = Math.min(r.x + r.w, q.x + q.w) - Math.max(r.x, q.x);
                 const oy = Math.min(r.y + r.h, q.y + q.h) - Math.max(r.y, q.y);
@@ -317,23 +323,26 @@ export default function Diorama({ points, activeKey, onPick, reducedMotion, onFa
                 best = t;
                 bestRect = r;
               }
-              if (score === t.L * 0.5) break;
+              if (score === Math.abs(t.dy) * 0.4) break;
             }
-            if (bestRect) placed.push(bestRect);
+            placed.push(bestRect);
             it.p.last = best;
             tag.classList.toggle("flip", best.flip);
-            const tx = Math.round(leftOf(best.flip));
-            const ty = Math.round(it.y - best.L - th);
-            tag.style.transform = `translate(${tx}px, ${ty}px)`;
-            // a short dotted stem only when the pin had to rise above a neighbour
-            it.p.line.style.display = hidden || !best.L ? "none" : "";
-            it.p.foot.style.display = hidden || !best.L ? "none" : "";
-            it.p.line.setAttribute("x1", String(it.x));
-            it.p.line.setAttribute("y1", String(it.y));
-            it.p.line.setAttribute("x2", String(it.x));
-            it.p.line.setAttribute("y2", String(it.y - best.L));
-            it.p.foot.setAttribute("cx", String(it.x));
-            it.p.foot.setAttribute("cy", String(it.y));
+            name.style.transform = best.dy ? `translateY(${best.dy}px)` : "";
+            const tx = Math.round(best.flip ? it.x - P / 2 - 4 - lw : it.x - P / 2);
+            tag.style.transform = `translate(${tx}px, ${Math.round(it.y - PH)}px)`;
+            // a short neon connector when the label had to shift off its pin
+            if (best.dy) {
+              const hx = it.x;
+              const hy = it.y - PH + 12;
+              const lx = best.flip ? bestRect.x + bestRect.w : bestRect.x;
+              const ly = bestRect.y + bestRect.h / 2;
+              it.p.line.style.display = "";
+              it.p.line.setAttribute("x1", String(hx));
+              it.p.line.setAttribute("y1", String(hy));
+              it.p.line.setAttribute("x2", String(lx));
+              it.p.line.setAttribute("y2", String(ly));
+            }
           }
         };
 
@@ -378,9 +387,9 @@ export default function Diorama({ points, activeKey, onPick, reducedMotion, onFa
           if (latest.current.autoRotate && !reducedMotion && introT >= 1 && !touching && t - idleSince > 4000) {
             off.copy(camera.position).sub(controls.target);
             sph.setFromVector3(off);
-            if (baseTheta === null) baseTheta = sph.theta - 0.42 * Math.sin(swingT);
+            if (baseTheta === null) baseTheta = sph.theta - 0.3 * Math.sin(swingT);
             swingT += (2 * Math.PI) / (40 * 60);
-            sph.theta = baseTheta + 0.42 * Math.sin(swingT);
+            sph.theta = baseTheta + 0.3 * Math.sin(swingT);
             camera.position.copy(controls.target).add(off.setFromSpherical(sph));
             camera.lookAt(controls.target);
             dirty = true;
@@ -389,10 +398,11 @@ export default function Diorama({ points, activeKey, onPick, reducedMotion, onFa
           if (!dirty && !moved) return;
           dirty = false;
           renderer!.render(scene, camera);
-          if (t - lastLayout > 60 || introT < 1) {
-            layout();
-            lastLayout = t;
-          }
+          // tags follow their pins every frame; while the view swings, spots are re-chosen only now and then so labels do not hop
+          const swinging = baseTheta !== null;
+          const search = introT < 1 || t - lastLayout > (swinging ? 1500 : 120);
+          layout(search);
+          if (search) lastLayout = t;
         };
         raf = requestAnimationFrame(loop);
         controls.addEventListener("end", () => {

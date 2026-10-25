@@ -4,6 +4,9 @@ import { useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import { Icon } from "./icons";
 import { cityPoints } from "@/lib/map/terrain";
+import { parseWorkbook } from "@/lib/parse/parse";
+import { readWorkbook } from "@/lib/parse/xlsx";
+import reference from "@/lib/engine/reference.json";
 
 const Diorama = dynamic(() => import("./map/Diorama"), {
   ssr: false,
@@ -12,7 +15,27 @@ const Diorama = dynamic(() => import("./map/Diorama"), {
 
 export function EmptyState({ onFile, onSample, error, loading }: { onFile: (f: File) => void; onSample: () => void; error: string | null; loading: boolean }) {
   const [over, setOver] = useState(false);
-  const points = useMemo(() => cityPoints(), []);
+  // before any upload, the pins count the requests in the bundled sample file (invented applicants), marked as sample
+  const [counts, setCounts] = useState<Record<string, number> | null>(null);
+  useEffect(() => {
+    let live = true;
+    fetch("/sample/sample-golden.xlsx")
+      .then((r) => (r.ok ? r.arrayBuffer() : Promise.reject()))
+      .then((buf) => {
+        const ds = parseWorkbook(readWorkbook(new Uint8Array(buf)), "sample", "sample");
+        const c: Record<string, number> = {};
+        for (const a of ds.applications) {
+          const city = a.pin ? reference.cities.find((x) => x.prefix === a.pin!.slice(0, 3))?.city : undefined;
+          if (city) c[city] = (c[city] ?? 0) + 1;
+        }
+        if (live) setCounts(c);
+      })
+      .catch(() => {});
+    return () => {
+      live = false;
+    };
+  }, []);
+  const points = useMemo(() => cityPoints().map((p) => (counts ? { ...p, count: counts[p.title] ?? 0 } : p)), [counts]);
   const [picked, setPicked] = useState<string | null>(null);
   const [reduced, setReduced] = useState(false);
   const [map3d, setMap3d] = useState(true);
@@ -36,6 +59,7 @@ export function EmptyState({ onFile, onSample, error, loading }: { onFile: (f: F
       }}
     >
       {map3d && <Diorama points={points} activeKey={picked} onPick={(k) => setPicked((p) => (p === k ? null : k))} reducedMotion={reduced} onFail={() => setMap3d(false)} autoRotate hint="Drag to rotate · scroll to zoom" />}
+      {counts && map3d && <p className="pointer-events-none absolute right-3 top-3 z-[3] rounded-md border border-white/10 bg-black/50 px-2.5 py-1 text-[12px] text-white/85">Pin numbers: new requests in the <b>sample</b> file</p>}
       {!map3d && <p className="grid h-full place-items-center text-[13px] text-muted">The 3D view needs WebGL. Upload still works.</p>}
       {over && <div className="pointer-events-none absolute inset-3 z-[4] grid place-items-center rounded-2xl border-2 border-dashed border-[#b4a6ff] bg-[#8f7cff14] text-[16px] font-semibold text-white">Drop the Excel file to open it</div>}
       <div className="absolute inset-x-0 bottom-6 z-[5] flex flex-col items-center gap-2 px-4">

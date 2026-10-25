@@ -547,3 +547,34 @@ table td.num {
 .tm-callout.is-orphan .tm-foot {
   background: #8e8ea6;
 }
+
+.dp-name {
+  transition: transform 260ms var(--ease-out);
+}
+/* compact pins: 24 px wide, tip at the bottom centre */
+.dp-pin {
+  width: 24px;
+  height: 32px;
+}
+.dp-head {
+  left: 2px;
+  top: 1px;
+  width: 20px;
+  height: 20px;
+}
+.dp-num {
+  font-size: 11px;
+}
+.dp-name {
+  margin-bottom: 14px;
+}
+.dp-pulse {
+  width: 12px;
+  height: 5px;
+  margin-left: -6px;
+}
+.dio-tag:hover,
+.dio-tag:focus-visible,
+.dio-tag.is-active {
+  z-index: 100000 !important;
+}
