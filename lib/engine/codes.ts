@@ -37,6 +37,7 @@ export const REASON_CODES = [
   "DUPLICATE_ID",
   "NOTE_CONFLICT",
   "EXPERIENCE_CONFLICT",
+  "PROVEN_OPERATOR",
 ] as const;
 
 export type ReasonCode = (typeof REASON_CODES)[number];
@@ -77,6 +78,7 @@ export const CODE_LABEL: Record<ReasonCode, string> = {
   DUPLICATE_ID: "Two rows share one ID",
   NOTE_CONFLICT: "Note disagrees with the form",
   EXPERIENCE_CONFLICT: "Experience figures disagree",
+  PROVEN_OPERATOR: "Proven operator of ours",
 };
 
 /** Codes that are integrity signals: route to a check, never decline. */

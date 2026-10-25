@@ -50,14 +50,16 @@
     },
     "declineBelowPct": 70,
     "smallBelowPct": 70,
-    "largeSpaceNoExperienceSqft": 1200
+    "largeSpaceNoExperienceSqft": 1200,
+    "formatMaxMultiple": 2
   },
   "sanity": {
     "investRupeesThreshold": 5000,
     "maxExperienceYears": 45,
     "sqmSuspectBelow": 120,
     "maxPlausibleSqft": 20000,
-    "outlierInvestLakh": 150
+    "outlierInvestLakh": 150,
+    "outlierRatio": 3
   },
   "score": {
     "capital": {
@@ -199,8 +201,8 @@
         ],
         "leadDays": {
           "560": 1,
-          "572": 2,
-          "570": 2
+          "570": 2,
+          "572": 2
         }
       },
       {
@@ -211,9 +213,9 @@
           "577"
         ],
         "leadDays": {
+          "577": 2,
           "580": 1,
-          "590": 2,
-          "577": 2
+          "590": 2
         }
       },
       {
@@ -239,7 +241,7 @@
     "royaltyPct": 5,
     "otherOpexPct": 4,
     "staffCostLakhMonth": {
-      "1": 1.0,
+      "1": 1,
       "2": 0.8,
       "3": 0.6
     },

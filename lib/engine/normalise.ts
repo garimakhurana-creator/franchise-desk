@@ -148,7 +148,7 @@ export function parsePinList(raw: unknown): { pins: string[]; bad: string[] } {
 }
 
 function closest<T extends string>(s: string, options: Record<string, T>): T | null {
-  const t = s.toLowerCase().replace(/[^a-z ]/g, " ").replace(/\s+/g, " ").trim();
+  const t = s.toLowerCase().replace(/[^a-z0-9 ]/g, " ").replace(/\s+/g, " ").trim();
   if (!t) return null;
   if (t in options) return options[t];
   for (const [k, v] of Object.entries(options)) if (t.startsWith(k) || t.includes(k)) return v;

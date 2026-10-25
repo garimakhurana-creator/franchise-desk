@@ -23,7 +23,9 @@ export function capex(policy: Policy, tier: Tier, space: SpaceKind | null, size:
   const c = policy.capex;
   const t = tierKey(tier);
   const sizeAssumed = !(size && size > 0) || space === "None" || space === null;
-  const sizeUsed = sizeAssumed ? c.idealSize[t] : (size as number);
+  // Fit-out is costed on the store format, at most formatMaxMultiple × ideal; the rest of a big space is not fitted out.
+  const formatCap = c.idealSize[t] * c.formatMaxMultiple;
+  const sizeUsed = sizeAssumed ? c.idealSize[t] : Math.min(size as number, formatCap);
   const fit = c.fitoutPerSqft[t];
   const stock = c.stockPerSqft[t];
   const fitoutStock = ((fit + stock) * sizeUsed) / 1e5;

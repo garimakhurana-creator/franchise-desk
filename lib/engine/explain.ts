@@ -166,7 +166,7 @@ export function explainAll(evs: Ev[], w: World): Decision[] {
           const locked = allocated.filter((a) => a.pinned).length;
           detail.push(
             `If fixed, it would rank ${pv.k} of ${pv.n} in ${T!.id} (provisional score ${s}, bar ${e.bar})` +
-              (pv.wins ? `, inside the ${plural(cap, "usable slot")}` : s < e.bar ? ", below the bar" : `, outside the ${plural(cap, "usable slot")}`) +
+              (pv.wins ? `, inside the ${plural(cap, "usable slot")}` : s < e.bar ? ", below the bar" : cap === 0 ? `, but ${T!.id} has no usable slot right now` : `, outside the ${plural(cap, "usable slot")}`) +
               (pv.wins && locked >= cap && cap > 0 ? "; both slots are held by approved partners, so a swap would need sign-off." : "."),
           );
         } else if (!T && s !== null) detail.push(`Provisional score ${s}.`);

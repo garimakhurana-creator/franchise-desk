@@ -155,7 +155,7 @@ export function run(ds: Dataset, policy: Policy, ctx: RunContext): RunResult {
       const a = group[i];
       const b = group[j];
       const names = similarNames(a.app.name, b.app.name);
-      const sameSite = a.hasSite && b.hasSite && a.app.size !== null && a.app.size === b.app.size && a.app.floor === b.app.floor;
+      const sameSite = a.hasSite && b.hasSite && a.app.space === b.app.space && a.app.size !== null && a.app.size === b.app.size && a.app.floor === b.app.floor;
       if (names) {
         a.identityPeers.push(b.key);
         b.identityPeers.push(a.key);
@@ -283,7 +283,8 @@ export function run(ds: Dataset, policy: Policy, ctx: RunContext): RunResult {
     // Investment
     if (app.invest === null) {
       const est = capex(policy, tier, app.space, app.size, null);
-      if (app.investRaw) hold({ code: "DATA_INVALID", text: `investment "${app.investRaw}" cannot be read as an amount; the estimate for this site is ₹${fmt(est.required)} lakh.`, ask: { what: "Send the investment capacity in ₹ lakh", from: "Applicant" } });
+      if (/^s*-/.test(app.investRaw)) hold({ code: "DATA_INVALID", text: `investment is negative (${app.investRaw}); we need the real amount to compare with the ₹${fmt(est.required)} lakh estimate.`, ask: { what: "Send the investment capacity in ₹ lakh", from: "Applicant" } });
+      else if (app.investRaw) hold({ code: "DATA_INVALID", text: `investment "${app.investRaw}" cannot be read as an amount; the estimate for this site is ₹${fmt(est.required)} lakh.`, ask: { what: "Send the investment capacity in ₹ lakh", from: "Applicant" } });
       else hold({ code: "DATA_MISSING", text: `investment is blank; we cannot check it against the ₹${fmt(est.required)} lakh estimate for this site.`, ask: { what: "Send the investment capacity in ₹ lakh", from: "Applicant" } });
     } else if (app.invest >= S.investRupeesThreshold) {
       hold({ code: "UNIT_ERROR", text: `investment ${app.invest.toLocaleString("en-IN")} looks like rupees (₹${fmt(app.invest / 1e5)} lakh), not lakh; please confirm the amount.`, ask: { what: `Confirm the investment: ₹${fmt(app.invest / 1e5)} lakh or ${app.invest.toLocaleString("en-IN")} lakh`, from: "Applicant" } });
@@ -317,9 +318,9 @@ export function run(ds: Dataset, policy: Policy, ctx: RunContext): RunResult {
       const bits: string[] = [];
       if (app.size) bits.push(`${app.size} sq ft`);
       if (app.floor && app.floor !== "Unknown") bits.push(floorWord(app.floor));
-      if (sig.foundShop) bits.push(`note "${clip(sig.foundShop, 40)}"`);
-      if (bits.length) {
-        hold({ code: "SPACE_CONTRADICTION", text: `space is "Not yet identified" yet the form lists ${listAnd(bits)}; please confirm.`, ask: { what: "Confirm whether a space exists and, if so, its tenure, size and floor", from: "Applicant" } });
+      const said = sig.foundShop ? `the note says "${clip(sig.foundShop, 40)}"` : "";
+      if (bits.length || said) {
+        hold({ code: "SPACE_CONTRADICTION", text: `space is "Not yet identified" yet ${[bits.length ? `the form lists ${listAnd(bits)}` : "", said].filter(Boolean).join(" and ")}; please confirm${bits.length ? "" : ` the site at pin ${app.pin ?? "?"}`}.`, ask: { what: "Confirm whether a space exists and, if so, its tenure, size and floor", from: "Applicant" } });
       }
     } else {
       // Owned / Rented
@@ -356,11 +357,12 @@ export function run(ds: Dataset, policy: Policy, ctx: RunContext): RunResult {
     if (sig.loan) e.verify.push({ code: "LOAN_DEPENDENT", text: "Funding depends on a bank loan", evidence: sig.loan, task: "Send the bank's loan sanction letter", owner: "Applicant", provenance: "declared" });
     if (sig.weakTitle) e.verify.push({ code: "WEAK_TITLE", text: app.space === "Owned" ? "Ownership may not be in the applicant's name alone" : "The lease may be informal or short", evidence: sig.weakTitle, task: app.space === "Owned" ? "Send the title deed, or a no-objection letter from co-owners" : "Send a registered lease with at least 5 years' tenure", owner: "Applicant", provenance: "declared" });
     if (sig.conflict) e.verify.push({ code: "CONFLICT_OF_INTEREST", text: "The note mentions another brand or an exclusivity tie", evidence: sig.conflict, task: "Sign a non-compete declaration", owner: "Legal", provenance: "declared" });
-    if (sig.provenOperator) e.info.push({ code: "CONFLICT_OF_INTEREST", text: "Proven operator: says they already run one of our stores; own-store overlap is checked", evidence: sig.provenOperator, provenance: "declared" });
+    if (sig.provenOperator) e.info.push({ code: "PROVEN_OPERATOR", text: "Proven operator: says they already run one of our stores; own-store overlap is checked", evidence: sig.provenOperator, provenance: "declared" });
     if (sig.compliance) e.verify.push({ code: "COMPLIANCE_CUE", text: "Funding source needs a KYC review", evidence: sig.compliance, task: "Show the source of funds through bank records", owner: "Legal", provenance: "declared" });
     if (sig.dispute) e.verify.push({ code: "COMPLIANCE_CUE", text: "A legal dispute is mentioned; the agreement waits until it is cleared", evidence: sig.dispute, task: "Share the case status or a clearance letter", owner: "Legal", provenance: "declared" });
     if (sig.unreadable) e.info.push({ code: "DATA_INVALID", text: "The note is in a script the rule-based reader cannot interpret; a person should read it", evidence: app.notes.slice(0, 80), provenance: "declared" });
-    if (app.invest !== null && app.invest >= S.outlierInvestLakh && app.invest < S.investRupeesThreshold && (app.experience ?? 0) === 0 && app.space === "None" && (app.targetMonths ?? 99) <= 2) {
+    const outlierAt = Math.min(S.outlierInvestLakh, capex(policy, tier, app.space, app.size, app.invest).required * S.outlierRatio);
+    if (app.invest !== null && app.invest >= outlierAt && app.invest < S.investRupeesThreshold && (app.experience ?? 0) === 0 && app.space === "None" && (app.targetMonths ?? 99) <= 2) {
       e.verify.push({ code: "CAPACITY_OUTLIER", text: `₹${fmt(app.invest)} lakh with no experience, no site and a ${app.targetMonths}-month target is unusual`, task: "Show proof and source of funds before any agreement", owner: "Legal", provenance: "declared" });
     }
     if (app.floor === "Mall" && tier === 3) e.verify.push({ code: "COMPLIANCE_CUE", text: `A mall unit in a Tier 3 town needs a site visit to confirm`, task: "Field team to visit and photograph the unit", owner: "Field", provenance: "declared" });
@@ -382,7 +384,7 @@ export function run(ds: Dataset, policy: Policy, ctx: RunContext): RunResult {
       const ratio = e.investUsed / e.capex.required;
       const atMin = capex(policy, tier, app.space, minSize(policy, tier), e.investUsed);
       const sizeKnown = !e.capex.sizeAssumed || app.space === "None";
-      if (ratio < policy.capex.declineBelowPct / 100 && (sizeKnown || e.investUsed / atMin.required < policy.capex.declineBelowPct / 100) && !e.holds.some((h) => h.code === "NOTE_CONFLICT")) {
+      if (ratio < policy.capex.declineBelowPct / 100 && (sizeKnown || e.investUsed / atMin.required < policy.capex.declineBelowPct / 100) && !e.holds.some((h) => h.code === "NOTE_CONFLICT" || (h.code === "DATA_INVALID" && /size/.test(h.text)))) {
         e.decline = e.decline ?? { code: "INVEST_LOW", text: `₹${fmt(e.investUsed)} lakh is ${Math.round(ratio * 100)}% of the ₹${fmt(e.capex.required)} lakh needed for ${e.capex.sizeUsed} sq ft in Tier ${tier}; the floor is ${policy.capex.declineBelowPct}%.`, ask: { what: `Re-apply with at least ₹${fmt(e.capex.required * policy.capex.declineBelowPct / 100)} lakh, a co-investor, or a smaller site`, from: "Applicant" } };
       } else if (ratio < 1) {
         hold({ code: "FUNDING_GAP", text: `₹${fmt(e.investUsed)} lakh covers ${Math.round(ratio * 100)}% of the ₹${fmt(e.capex.required)} lakh estimate; proof of funds or a co-investor is needed.`, ask: { what: `Send proof of ₹${fmt(e.capex.required)} lakh in funds, or add a co-investor for the ₹${fmt(e.capex.required - e.investUsed)} lakh gap`, from: "Applicant" } });
