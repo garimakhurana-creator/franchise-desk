@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { CODE_LABEL } from "@/lib/engine/codes";
 import { counterfactualSentence } from "@/lib/engine/counterfactual";
+import { heldPercent } from "@/lib/engine/stability";
 import { applicantMessage } from "@/lib/engine/messages";
 import { fmtDate } from "@/lib/engine/plan";
 import type { Session, Step } from "@/lib/engine/session";
@@ -34,6 +35,8 @@ export function DecisionCard({
   }, [d?.key]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const cf = useMemo(() => (d ? counterfactualSentence(step, d, today, step.policy) : ""), [d, step, today]);
+  // policy sensitivity: thresholds nudged ±10%; skipped on very large files to keep the card instant
+  const held = useMemo(() => (d && d.status !== "WITHDRAWN" && step.dataset.applications.length <= 250 ? heldPercent(step.dataset, step.policy, { today, pinned: {} }, d.key, d.status) : null), [d, step, today]);
   const app = d ? step.dataset.applications.find((a) => a.key === d.key) : null;
   const terr = d ? step.result.territories.find((t) => t.key === d.territoryKey) : null;
   const msg = useMemo(() => (d && app ? applicantMessage(d, { lang: app.language, city: app.city ?? terr?.city ?? null, today, policy: step.policy }) : null), [d, app, terr, today, step.policy]);
@@ -200,6 +203,9 @@ export function DecisionCard({
             <p className="text-[13.5px]"><span className="font-semibold">{d.stability.label === "robust" ? "Robust." : "Borderline."}</span> {d.stability.flip}</p>
           ) : (
             <p className="text-[13.5px] text-muted">Not applicable.</p>
+          )}
+          {held && (
+            <p className="mt-1.5 text-[13px] text-ink-2">Held in <span className="num font-semibold">{held.pct}%</span> of {held.variants} policy variations (each main threshold nudged ±10%).</p>
           )}
           <h4 className="mt-3 text-[12px] font-medium text-muted">What would change this decision</h4>
           <p className="mt-0.5 text-[13.5px]">{cf}</p>
