@@ -37,7 +37,7 @@ export async function complete(prompt: string, jsonSchema: object, system?: stri
     body: JSON.stringify({
       ...(system ? { systemInstruction: { parts: [{ text: system }] } } : {}),
       contents: [{ role: "user", parts: [{ text: prompt }] }],
-      generationConfig: { responseMimeType: "application/json", responseSchema: jsonSchema, temperature: 0, maxOutputTokens: 1024 },
+      generationConfig: { responseMimeType: "application/json", responseSchema: jsonSchema, temperature: 0 },
     }),
   });
   if (!res.ok) throw new LlmError(`model http ${res.status}`);
