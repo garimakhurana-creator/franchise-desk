@@ -5,7 +5,7 @@ Open **https://franchise-desk-red.vercel.app** in any browser. No login.
 ## 0:00 to 0:30: upload and the first view
 1. Drop the workbook (or press **Try sample data**: clearly labelled SAMPLE DATA, invented applicants).
 2. Point at the parse report line: "Read 22 applications and 6 territories · 2 rows ignored". Open **Data notes**: the grey template example rows were dropped because real APP-001 and TER-01 exist.
-3. Point at the ledger: "12 of 22 move forward · 8 of 8 usable slots filled · 2 wanted slots blocked by pins that already have our stores" and the **Pin rule verified: 0 conflicts** badge.
+3. Point at the ledger: "8 of 22 move forward · 8 of 8 usable slots filled · 2 wanted slots blocked by pins that already have our stores" and the **Pin rule verified: 0 conflicts** badge.
 4. Point at the territory strips on the left: TER-03 wants 2 stores but has 1 free pin (one ghost block); TER-05 wants 1 and has 0.
 
 Say: "Every row has a status, a one-line reason with numbers, a next step and an owner. Nothing is hidden behind a click."
@@ -23,7 +23,7 @@ Type into **Ask the desk**:
 2. `APP-007 owned space is 480 sq ft on the ground floor` → On hold → Approved, score and rank movement, knock-on: APP-010 Conditional → Waitlisted (ready sites outrank site-less ones), approved partners stay locked, first next step: verify the claim.
 3. `What if APP-004 moves to pin 570008?` → What-if only.
 
-   **How to word the contested case:** "It now qualifies and would outrank APP-003 by 9 points, but I will not revoke an approved partner on my own. Here is the swap recommendation." Then say `apply`, then press **Confirm swap**: APP-004 approved, APP-003 waitlisted with its next-best option, all in the audit trail.
+   **How to word the contested case:** "It now qualifies and would outrank APP-003 by 11 points, but I will not revoke an approved partner on my own. Here is the swap recommendation." Then say `apply`, then press **Confirm swap**: APP-004 approved, APP-003 waitlisted with its next-best option, all in the audit trail.
 4. `undo` twice, then `APP-001 has withdrawn` → APP-002 promoted automatically, with the reason.
 5. `Which territories have unfilled slots?` → all usable capacity allocated; TER-05 has no free pin; TER-03 can host 1 of 2.
 6. Optional: `APP-004 होल्ड पर क्यों है?` → answered in Hindi, numbers and IDs checked against the English.

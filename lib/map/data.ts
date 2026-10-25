@@ -92,12 +92,13 @@ export interface TowerLabel {
   city: string;
   position: [number, number, number];
   text: string;
+  anchor: "start" | "end";
 }
 
 const STATUS_ORDER: Record<Status, number> = { APPROVED: 0, CONDITIONAL: 1, WAITLISTED: 2, ON_HOLD: 3, DECLINED: 4, WITHDRAWN: 5 };
 
 export const BLOCK_H = 2200; // metres per slot block
-export const BLOCK_GAP = 450;
+export const BLOCK_GAP = 1000;
 
 function pos(pin: string | null): [number, number] | null {
   const c = centroid(pin);
@@ -147,15 +148,18 @@ export function buildMapData(result: RunResult) {
     const lng = pts.reduce((s, p) => s + p[0], 0) / pts.length;
     const lat = pts.reduce((s, p) => s + p[1], 0) / pts.length;
     // nudge the tower just north-east of the pin cluster so it does not cover the stones
-    const at: [number, number] = [lng + 0.03, lat + 0.03];
+    const at: [number, number] = [lng + 0.07, lat + 0.11];
     const kinds: BlockDatum["kind"][] = [];
     t.approved.forEach(() => kinds.push("approved"));
     t.conditional.forEach(() => kinds.push("conditional"));
     for (let i = kinds.length; i < t.effectiveCapacity; i++) kinds.push("open");
     for (let i = t.effectiveCapacity; i < t.slots; i++) kinds.push("ghost");
     kinds.forEach((k, level) => blocks.push({ territory: t.id, kind: k, level, position: [at[0], at[1], level * (BLOCK_H + BLOCK_GAP)] }));
-    labels.push({ id: t.id, city: t.city ?? "", position: [at[0], at[1], Math.max(1, kinds.length) * (BLOCK_H + BLOCK_GAP) + 1500], text: `${t.id} · ${t.approved.length + t.conditional.length}/${t.effectiveCapacity}${t.slots > t.effectiveCapacity ? ` (${t.slots} wanted)` : ""}` });
+    labels.push({ id: t.id, city: t.city ?? "", position: [at[0], at[1], Math.max(1, kinds.length) * (BLOCK_H + BLOCK_GAP) + 1500], text: `${t.id} · ${t.approved.length + t.conditional.length}/${t.effectiveCapacity}${t.slots > t.effectiveCapacity ? ` (${t.slots} wanted)` : ""}`, anchor: "start" });
   }
+
+  // labels: put a label on the left when another tower sits close by to its east
+  for (const l of labels) if (labels.some((o) => o !== l && Math.abs(o.position[1] - l.position[1]) < 0.9 && o.position[0] > l.position[0] && o.position[0] - l.position[0] < 1.6)) l.anchor = "end";
 
   // Contested outcomes: a gold arc from the challenger to the approved partner it outranks.
   const arcs: ArcDatum[] = [];
