@@ -23,6 +23,7 @@ import { buildTerrainData, territoryPoints } from "@/lib/map/terrain";
 import { centroid } from "@/lib/engine/geo";
 import { RequestsPanel, LocationPanel, territoryRequests } from "./map/TerritoryPanels";
 import { territoryOverlay } from "@/lib/map/pinAreas";
+import { PinLegend } from "./map/PinLegend";
 import { selfTest } from "@/lib/engine/selftest";
 import { controlTower } from "@/lib/engine/tower";
 
@@ -497,6 +498,7 @@ function WorldMap({ result, selected, highlight, onSelect, activeTerritory, onPi
           {failed && <p className="absolute bottom-24 left-1/2 -translate-x-1/2 text-[12px] text-muted">Map unavailable ({failed}). Every decision is in the list.</p>}
         </>
       )}
+      {(flat || mode === "overview") && <PinLegend points={points} />}
       {requestDecision ? (
         <LocationPanel
           result={result}
