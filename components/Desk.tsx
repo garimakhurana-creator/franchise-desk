@@ -19,6 +19,7 @@ import { Drawer, PolicyPanel, MethodPanel, DataNotesPanel } from "./Panels";
 import { SelfTestPanel, TowerPanel } from "./TowerPanels";
 import { HudStats } from "./hud/HudStats";
 import { Sidebar } from "./hud/Sidebar";
+import { buildTerrainData } from "@/lib/map/terrain";
 import { selfTest } from "@/lib/engine/selftest";
 import { controlTower } from "@/lib/engine/tower";
 
@@ -403,17 +404,63 @@ const TerrainMap = dynamic(() => import("./map/TerrainMap"), {
 
 /** The world behind the HUD. Optional by design: any failure leaves a calm backdrop and the roster carries everything. */
 function WorldMap({ result, selected, highlight, onSelect, activeTerritory, onPickTerritory }: { result: RunResult; selected: string | null; highlight: string[]; onSelect: (k: string) => void; activeTerritory: string | null; onPickTerritory: (k: string | null) => void }) {
+  // Overview: India as a 3D diorama with territory tags. Deep dive: the live map at street level.
+  const [mode, setMode] = useState<"overview" | "explore">("overview");
+  const [focus, setFocus] = useState<[number, number] | null>(null);
   const [failed, setFailed] = useState<string | null>(null);
   const [reduced, setReduced] = useState(false);
   useEffect(() => setReduced(window.matchMedia("(prefers-reduced-motion: reduce)").matches), []);
+  // picking a territory anywhere (sidebar or tag) opens it on the live map
+  useEffect(() => {
+    if (!activeTerritory) return;
+    const c = buildTerrainData(result).callouts.find((x) => x.key === activeTerritory);
+    if (c) {
+      setFocus(c.lngLat);
+      setMode("explore");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTerritory]);
   return (
     <div className="relative h-[55vh] w-full min-h-[340px] lg:h-auto lg:flex-1" aria-label="Map of India with territories, stores and applications" style={{ background: "radial-gradient(90% 70% at 55% 35%, #1a2232 0%, #060a10 70%)" }}>
-      {!failed && <TerrainMap result={result} selected={selected} highlight={highlight} onSelect={onSelect} theme="dark" reducedMotion={reduced} onFail={(r) => setFailed(r)} activeTerritory={activeTerritory} onPickTerritory={onPickTerritory} />}
-      <div className="world-vignette pointer-events-none absolute inset-0" aria-hidden />
-      {failed && <p className="absolute bottom-24 left-1/2 -translate-x-1/2 text-[12px] text-muted">Map unavailable ({failed}). Every decision is in the roster.</p>}
+      {mode === "overview" ? (
+        <Diorama
+          result={result}
+          reducedMotion={reduced}
+          onFail={(r) => {
+            console.warn("3D overview unavailable, showing the live map:", r);
+            setMode("explore");
+          }}
+          onDeepDive={(key, lngLat) => {
+            setFocus(lngLat);
+            setMode("explore");
+            if (key) onPickTerritory(key);
+          }}
+        />
+      ) : (
+        <>
+          {!failed && <TerrainMap result={result} selected={selected} highlight={highlight} onSelect={onSelect} theme="dark" reducedMotion={reduced} onFail={(r) => setFailed(r)} activeTerritory={activeTerritory} onPickTerritory={onPickTerritory} focus={focus} />}
+          <div className="world-vignette pointer-events-none absolute inset-0" aria-hidden />
+          <button
+            type="button"
+            onClick={() => {
+              setMode("overview");
+              onPickTerritory(null);
+            }}
+            className="absolute left-1/2 top-3 z-[3] inline-flex -translate-x-1/2 items-center gap-1.5 rounded-full border border-white/15 bg-[#0c131c]/90 px-3.5 py-1.5 text-[12.5px] font-medium text-white shadow-lg hover:border-gold"
+          >
+            <span aria-hidden>←</span> Back to India
+          </button>
+          {failed && <p className="absolute bottom-24 left-1/2 -translate-x-1/2 text-[12px] text-muted">Map unavailable ({failed}). Every decision is in the list.</p>}
+        </>
+      )}
     </div>
   );
 }
+
+const Diorama = dynamic(() => import("./map/Diorama"), {
+  ssr: false,
+  loading: () => <div className="grid h-full place-items-center text-[13px] text-muted">Building the 3D view of India…</div>,
+});
 
 function HeaderButton({ onClick, icon, label }: { onClick: () => void; icon: React.ReactNode; label: string }) {
   return (

@@ -20,6 +20,8 @@ export interface TerrainMapProps {
   theme: "light" | "dark";
   reducedMotion: boolean;
   onFail: (reason: string) => void;
+  /** Deep-dive target: open the map here instead of playing the India intro. */
+  focus?: [number, number] | null;
 }
 
 const STATUS_HEX: Record<Status, string> = { APPROVED: "#2fbf8f", CONDITIONAL: "#4fc3d9", WAITLISTED: "#9aa6d3", ON_HOLD: "#e39a3b", DECLINED: "#e2685f", WITHDRAWN: "#8a989e" };
@@ -80,7 +82,9 @@ export default function TerrainMap(props: TerrainMapProps) {
     }
     let map: MLMap;
     try {
-      map = new maplibregl.Map({ container: el, style: style(props.theme), ...INDIA_VIEW, maxPitch: 72, maxZoom: 18, attributionControl: false, fadeDuration: 0 });
+      // a deep dive opens straight at the territory, so only its tiles load
+      const start = props.focus ? { center: props.focus, zoom: 9.6, pitch: 50, bearing: -10 } : INDIA_VIEW;
+      map = new maplibregl.Map({ container: el, style: style(props.theme), ...start, maxPitch: 72, maxZoom: 18, attributionControl: false, fadeDuration: 0 });
       // credits stay available behind an (i) button, collapsed so they never cover the console
       map.addControl(new maplibregl.AttributionControl({ compact: true }), "bottom-right");
       map.once("load", () => el.querySelector(".maplibregl-ctrl-attrib")?.classList.remove("maplibregl-compact-show"));
@@ -241,6 +245,16 @@ export default function TerrainMap(props: TerrainMapProps) {
     for (const m of markers.current) m.getElement().classList.toggle("is-active", m.getElement().dataset.key === props.activeTerritory);
   }, [props.activeTerritory]);
 
+  // a new deep-dive target while the map is open: fly there
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !ready.current || !props.focus) return;
+    const to = { center: props.focus, zoom: Math.max(10.6, map.getZoom()), pitch: 55 };
+    if (props.reducedMotion) map.jumpTo(to);
+    else map.flyTo({ ...to, duration: 1800, essential: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [props.focus?.[0], props.focus?.[1]]);
+
   // Tags that would overlap rise to different heights, like peak labels on taller poles.
   function layoutCallouts(map: MLMap) {
     const placed: { x: number; y: number; w: number; h: number }[] = [];
@@ -314,6 +328,17 @@ export default function TerrainMap(props: TerrainMapProps) {
   }
 
   function intro(map: MLMap) {
+    const f = latest.current.focus;
+    if (f && map.getContainer().clientHeight >= 80) {
+      map.resize();
+      const to = { center: f, zoom: 10.6, pitch: 55, bearing: -10 };
+      if (latest.current.reducedMotion) map.jumpTo(to);
+      else {
+        map.jumpTo({ center: f, zoom: 7.2, pitch: 40, bearing: 0 });
+        map.flyTo({ ...to, duration: 2200, essential: true });
+      }
+      return;
+    }
     if (map.getContainer().clientHeight < 80) {
       // the column has not been laid out yet; try again shortly
       setTimeout(() => intro(map), 150);

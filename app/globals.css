@@ -168,7 +168,9 @@ table td.num {
 }
 
 /* ---------- Terrain map callouts: territories pop out like peak labels ---------- */
+/* only the tag is clickable: poles and the space under a tag must not steal clicks from other tags */
 .tm-callout {
+  pointer-events: none;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -186,6 +188,8 @@ table td.num {
   animation: none;
 }
 .tm-tag {
+  pointer-events: auto;
+  cursor: pointer;
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -326,4 +330,40 @@ table td.num {
 }
 .world-vignette {
   background: linear-gradient(180deg, #060a1066 0%, transparent 10%, transparent 88%, #060a1099 100%);
+}
+
+/* Diorama tags: the tag is the button, positioned by transform; fade in without touching transform */
+.dio-tag {
+  position: absolute;
+  left: 0;
+  top: 0;
+  animation: dio-in 520ms var(--ease-out) both;
+  animation-delay: var(--d, 0s);
+}
+.dio-tag:hover,
+.dio-tag:focus-visible {
+  border-color: #f2c14e;
+  box-shadow: 0 0 0 2px #f2c14e88, 0 8px 22px -8px #000c;
+  z-index: 2;
+}
+@keyframes dio-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (max-width: 640px) {
+  .dio-tag {
+    min-width: 0;
+    padding: 3px 6px 4px;
+  }
+  .dio-tag .tm-title {
+    font-size: 12px;
+  }
+  .dio-tag .tm-sub {
+    font-size: 10.5px;
+  }
 }
