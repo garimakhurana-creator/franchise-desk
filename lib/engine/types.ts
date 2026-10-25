@@ -198,7 +198,7 @@ export interface Decision {
   ahead: string[];
   capex: Capex | null;
   nearest: Nearest | null;
-  competitors: { id: string; score: number | null; status?: Status }[];
+  competitors: { id: string; key: string; score: number | null; status?: Status }[];
   contested?: { against: string; gap: number };
   redirect: string | null;
   freePinsOffered: string[];

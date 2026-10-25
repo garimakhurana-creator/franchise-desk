@@ -89,7 +89,7 @@ export function explainAll(evs: Ev[], w: World): Decision[] {
     let handling: string | undefined;
     const flags: Flag[] = [...e.verify, ...e.info];
     const prev = ctx.previous?.[e.key];
-    const promoted = !!prev && (prev === "WAITLISTED" || prev === "ON_HOLD") && moving(e) && !!ctx.previous;
+    const promoted = prev === "WAITLISTED" && moving(e);
     const next = (txt: string, who: Owner) => {
       nextStep = txt;
       owner = who;
@@ -351,7 +351,7 @@ export function explainAll(evs: Ev[], w: World): Decision[] {
       ahead: e.status === "WAITLISTED" ? [...allocated.map((a) => a.app.id), ...pool.filter((p) => p.status === "WAITLISTED" && (queue.get(p.key) ?? 99) < (queuePos ?? 0)).map((p) => p.app.id)] : [],
       capex: e.capex,
       nearest: e.nearest,
-      competitors: scored.filter((p) => p.key !== e.key).slice(0, 6).map((p) => ({ id: p.app.id, score: p.score?.total ?? null, status: p.status })),
+      competitors: scored.filter((p) => p.key !== e.key).slice(0, 6).map((p) => ({ id: p.app.id, key: p.key, score: p.score?.total ?? null, status: p.status })),
       contested: e.loss?.kind === "contested" ? { against: e.loss.against!.app.id, gap: e.loss.gap ?? 0 } : undefined,
       redirect,
       freePinsOffered: freeOffer,

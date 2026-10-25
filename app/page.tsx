@@ -1,3 +1,5 @@
+import Desk from "@/components/Desk";
+
 export default function Home() {
-  return <main>Franchise Desk</main>;
+  return <Desk />;
 }

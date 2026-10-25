@@ -165,14 +165,17 @@ export function respond(state: ChatState, parsed: Parsed, at: string, mode: Repl
         say(`${simulated ? "Simulating" : "Applied"} ${POLICY_PATHS[c.path]} ${old} → ${c.value}.${simulated ? "" : " This re-ran every decision from the uploaded file with the new policy and replayed the logged updates in order."}`);
       }
     }
-    const knock = changes.filter((c) => !targetKeys.has(c.key));
+    const others = changes.filter((c) => !targetKeys.has(c.key));
+    const knock = others.filter((c) => c.before.status !== c.after.status || c.before.queue !== c.after.queue);
+    const rankOnly = others.filter((c) => !knock.includes(c));
     const own = changes.filter((c) => targetKeys.has(c.key));
     if (own.length) blocks.push({ kind: "changes", title: simulated ? "Would change:" : "Changed:", changes: own, simulated });
     if (knock.length) {
       blocks.push({ kind: "changes", title: `Knock-on effects on ${knock.length} other application${knock.length === 1 ? "" : "s"}:`, changes: knock, simulated });
       knock.forEach((k) => focus.add(k.key));
-      for (const k of knock.slice(0, 4)) say(`${k.id}: ${k.why}`);
-    }
+      for (const k of knock.filter((x) => x.before.status !== x.after.status).slice(0, 4)) say(`${k.id}: ${k.why}`);
+    } else if (own.length) say(`No other application changes status.`);
+    if (rankOnly.length) say(`Rank shifted without a status change for ${rankOnly.map((c) => c.id).join(", ")}.`);
     if (!changes.length) say(`No decision changes${simulated ? " in this what-if" : ""}.${explainNoChange(cmds, after)}`);
     const locked = before.decisions.filter((d) => d.status === "APPROVED" && after.decisions.find((x) => x.key === d.key)?.status === "APPROVED" && changes.some((c) => c.key !== d.key));
     const lockedInTouched = locked.filter((d) => changes.some((c) => after.decisions.find((x) => x.key === c.key)?.territoryKey === d.territoryKey));
