@@ -34,3 +34,9 @@ Honest note: concepts B and C were critiqued as sketches against the three audie
 - The map has catchment discs but no shaded overlap lenses, and update choreography is a camera ease to the affected pin rather than ripples and ghost trails.
 - Presentation mode (guided tour) is not built.
 - At city zoom the map has no streets (no third-party tiles, by choice, so nothing external can fail).
+
+## Revision: internal dashboard, map-first (after user review)
+- The user asked for a dark interface; a game-style HUD was tried and rejected as too cluttered for an internal company tool. The final design is a calm dark dashboard: one sidebar with Applications and Territories tabs, a slim KPI strip, the map filling the rest, sentence-case type and no glow.
+- The map is India in 3D relief (EOX Sentinel-2 imagery on AWS terrain tiles, masked to India) with territories as callout tags showing request counts and slots. A Satellite/Map toggle adds OpenStreetMap streets; Esri reference labels name places and roads over the satellite view. Relief softens as you zoom (2.6x at state level, 1x at street level) so labels stay readable; zoom goes to street level (18).
+- Bug fixed during review: a long sidebar stretched the page so the map was framed for an invisible 2,000 px canvas; the layout is now pinned to the viewport.
+- Licensing note: OpenStreetMap tiles are for light use with attribution; Esri reference labels and EOX imagery are credited on the map and suitable for this non-commercial demo, not for commercial production without a licence.

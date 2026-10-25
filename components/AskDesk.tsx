@@ -43,7 +43,7 @@ export const AskDesk = forwardRef<HTMLInputElement, { turns: Turn[]; busy: boole
   const chips = suggestions(result);
 
   return (
-    <div className={`no-print fixed bottom-0 left-0 z-30 transition-[right] duration-300 ${shifted ? "right-0 md:right-[min(560px,46vw)]" : "right-0"}`}>
+    <div className={`no-print fixed bottom-0 left-0 z-30 transition-[right] duration-300 lg:left-[400px] ${shifted ? "right-0 md:right-[min(560px,46vw)]" : "right-0"}`}>
       <div className="mx-auto max-w-[920px] px-3 pb-3">
         <div className="hud-panel">
           {open && turns.length > 0 && (

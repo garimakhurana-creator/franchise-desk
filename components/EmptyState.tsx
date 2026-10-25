@@ -8,17 +8,17 @@ export function EmptyState({ onFile, onSample, error, loading }: { onFile: (f: F
   const input = useRef<HTMLInputElement>(null);
   return (
     <main className="relative isolate mx-auto grid w-full max-w-[1240px] flex-1 grid-cols-1 items-center gap-8 px-4 py-6 md:grid-cols-[1.1fr_0.9fr] md:gap-10 md:py-16">
-      <div aria-hidden className="pointer-events-none fixed inset-0 -z-10" style={{ background: "radial-gradient(55% 45% at 72% 42%, #f5c45122, transparent 70%), radial-gradient(45% 40% at 18% 85%, #4fd1e81a, transparent 70%), repeating-linear-gradient(0deg, #ffffff05 0 1px, transparent 1px 44px), repeating-linear-gradient(90deg, #ffffff05 0 1px, transparent 1px 44px)" }} />
+      <div aria-hidden className="pointer-events-none fixed inset-0 -z-10" style={{ background: "radial-gradient(55% 45% at 72% 42%, #f5c45122, transparent 70%), radial-gradient(45% 40% at 18% 85%, #4fd1e81a, transparent 70%), #060a10" }} />
       <div>
-        <p className="hud-label text-gold">Expansion command · franchise partner review</p>
-        <h1 className="hud mt-3 text-[32px] font-bold uppercase leading-[0.98] tracking-[0.01em] sm:text-[40px] md:text-[62px]">
+        <p className="text-[13px] font-medium text-gold">Franchise partner review for the expansion team</p>
+        <h1 className="mt-3 text-[30px] font-semibold leading-[1.08] tracking-[-0.02em] sm:text-[38px] md:text-[52px]">
           Every application decided.
           <br />
-          <span className="text-gold glow">Every decision explained.</span>
+          <span className="text-gold">Every decision explained.</span>
         </h1>
         {/* The primary action sits right under the headline so it is on the first screen at every size */}
         <div className="mt-5 flex flex-wrap items-center gap-3">
-          <button type="button" onClick={onSample} disabled={loading} className="inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-[15px] font-bold disabled:opacity-60" style={{ background: "var(--gold)", color: "var(--on-gold)", boxShadow: "0 0 28px -6px #f5c451aa" }}>
+          <button type="button" onClick={onSample} disabled={loading} className="inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-[15px] font-bold disabled:opacity-60" style={{ background: "var(--gold)", color: "var(--on-gold)" }}>
             <Icon.Spark /> {loading ? "Loading…" : "Launch with sample data"}
           </button>
           <label htmlFor="file" className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-line-strong px-4 py-2.5 text-[14px] font-semibold text-ink hover:border-gold">
@@ -50,7 +50,7 @@ export function EmptyState({ onFile, onSample, error, loading }: { onFile: (f: F
             const f = e.dataTransfer.files?.[0];
             if (f) onFile(f);
           }}
-          className={`hud-panel group relative flex min-h-[280px] cursor-pointer flex-col items-center justify-center gap-3 border-2 border-dashed p-8 text-center transition-colors ${over ? "border-gold bg-surface-2" : "border-line-strong hover:border-gold"}`}
+          className={`group relative rounded-xl bg-surface flex min-h-[280px] cursor-pointer flex-col items-center justify-center gap-3 border-2 border-dashed p-8 text-center transition-colors ${over ? "border-gold bg-surface-2" : "border-line-strong hover:border-gold"}`}
           style={{ boxShadow: "var(--shadow)" }}
         >
           <span className="grid size-12 place-items-center rounded-full bg-surface-2 text-gold transition-transform group-hover:-translate-y-0.5">

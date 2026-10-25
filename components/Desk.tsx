@@ -18,8 +18,7 @@ import { AskDesk, type Turn } from "./AskDesk";
 import { Drawer, PolicyPanel, MethodPanel, DataNotesPanel } from "./Panels";
 import { SelfTestPanel, TowerPanel } from "./TowerPanels";
 import { HudStats } from "./hud/HudStats";
-import { MissionPanel } from "./hud/MissionPanel";
-import { Roster } from "./hud/Roster";
+import { Sidebar } from "./hud/Sidebar";
 import { selfTest } from "@/lib/engine/selftest";
 import { controlTower } from "@/lib/engine/tower";
 
@@ -246,27 +245,27 @@ export default function Desk() {
 
   return (
     <div className="min-h-dvh flex flex-col">
-      <header className="hud sticky top-0 z-30 border-b border-line/70 bg-bg/85 backdrop-blur-md">
+      <header className="sticky top-0 z-30 border-b border-line bg-[#080e16]">
         <div className="mx-auto flex max-w-[1800px] items-center gap-3 px-4 py-2">
           <a href="/" className="flex shrink-0 items-center gap-2.5" aria-label="Franchise Desk home">
-            <span className="grid size-8 place-items-center" style={{ background: "var(--gold)", clipPath: "polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0 50%)", color: "var(--on-gold)" }} aria-hidden>
+            <span className="grid size-8 place-items-center rounded-md" style={{ background: "var(--gold)", color: "var(--on-gold)" }} aria-hidden>
               <Icon.Store size={16} />
             </span>
-            <span className="flex flex-col leading-none">
-              <span className="hud-num text-[16px] tracking-[0.08em] text-ink">FRANCHISE DESK</span>
-              <span className="hud-label mt-0.5 text-[9.5px]">Expansion command</span>
+            <span className="flex flex-col leading-tight">
+              <span className="text-[15px] font-semibold text-ink">Franchise Desk</span>
+              <span className="text-[11.5px] text-muted">Partner review · expansion team</span>
             </span>
           </a>
           {result && dataset && (
-            <div className="hud-num ml-3 hidden min-w-0 items-center gap-2 whitespace-nowrap text-[11.5px] font-medium text-muted md:flex">
+            <div className="num ml-3 hidden min-w-0 items-center gap-2 whitespace-nowrap text-[12px] text-muted md:flex">
               {dataset.source !== "sample" && <span className="max-w-[22ch] truncate" title={dataset.fileName}>{dataset.fileName}</span>}
-              <span title="Run ID: a hash of the input, policy and date">RUN {result.runId}</span>
+              <span title="Run ID: a hash of the input, policy and date">Run {result.runId}</span>
               <span aria-hidden>·</span>
-              <span>POLICY {result.policyVersion}</span>
+              <span>Policy {result.policyVersion}</span>
               <span aria-hidden>·</span>
               <span className="inline-flex items-center gap-1.5" title={ai === "on" ? "Questions are parsed by rules first; the model only helps with phrasing the rules do not understand. It never decides." : "Model unavailable or not configured: every answer comes from the rule-based parser."}>
                 <i className="inline-block size-1.5 rounded-full" style={{ background: ai === "on" ? "var(--approved)" : "var(--muted)", boxShadow: ai === "on" ? "0 0 8px var(--approved)" : undefined }} />
-                {ai === "on" ? "AI STANDBY" : "RULE-BASED"}
+                {ai === "on" ? "AI available" : "Rule-based"}
               </span>
             </div>
           )}
@@ -302,45 +301,27 @@ export default function Desk() {
       {!result || !dataset || !steps ? (
         <EmptyState onFile={onFile} onSample={onSample} error={error} loading={loading} />
       ) : (
-        <main className="relative flex-1">
-          {/* The world: India in relief behind every panel */}
-          <WorldMap result={result} selected={selected} highlight={highlight} onSelect={setSelected} activeTerritory={terrFilter} onPickTerritory={setTerrFilter} />
-          {/* The HUD */}
-          <div className="pointer-events-none relative z-10 mx-auto flex max-w-[1800px] flex-col gap-3 px-3 pt-3 pb-40 lg:h-[calc(100dvh-53px)] lg:pb-[132px]">
-            <div className="pointer-events-auto">
-              <HudStats result={result} statusFilter={statusFilter} onStatus={setStatusFilter} sample={dataset.source === "sample"} />
-              <div className="hud mt-1.5 flex flex-wrap items-center gap-x-3 px-1 text-[11.5px] font-medium text-muted">
-                <span>
-                  READ <span className="hud-num text-ink-2">{dataset.applications.length}</span> APPLICATIONS · <span className="hud-num text-ink-2">{dataset.territories.length}</span> TERRITORIES · <span className="hud-num text-ink-2">{dataset.rowsIgnored.length}</span> ROWS IGNORED
-                </span>
-                <button type="button" onClick={() => setPanel("notes")} className="underline decoration-dotted underline-offset-2 hover:text-ink">
-                  {dataset.notes.filter((n) => n.severity !== "info").length} DATA ISSUES · {dataset.notes.filter((n) => n.severity === "info").length} NOTES
-                </button>
-                {error && <span role="alert" className="text-declined">{error}</span>}
-              </div>
-            </div>
-            <div className="grid min-h-0 flex-1 grid-cols-1 gap-3 lg:grid-cols-[300px_minmax(0,1fr)_minmax(380px,430px)]">
-              <div className="pointer-events-auto min-h-0">
-                <MissionPanel result={result} active={terrFilter} onPick={setTerrFilter} />
-              </div>
-              <div aria-hidden className="hidden lg:block" />
-              <div className="pointer-events-auto min-h-0 lg:h-full">
-                <Roster
-                  decisions={result.decisions}
-                  selected={selected}
-                  highlight={highlight}
-                  terrFilter={terrFilter}
-                  statusFilter={statusFilter}
-                  onStatus={setStatusFilter}
-                  onClearTerritory={() => setTerrFilter(null)}
-                  onSelect={setSelected}
-                  onLedger={() => setPanel("ledger")}
-                />
-              </div>
-            </div>
+        <main className="grid flex-1 grid-cols-1 lg:flex-none lg:h-[calc(100dvh-53px)] lg:grid-cols-[400px_minmax(0,1fr)] lg:grid-rows-[minmax(0,1fr)] lg:overflow-hidden">
+          <div className="order-2 h-[70vh] min-h-0 lg:order-1 lg:h-full lg:overflow-hidden">
+            <Sidebar
+              result={result}
+              selected={selected}
+              highlight={highlight}
+              terrFilter={terrFilter}
+              statusFilter={statusFilter}
+              onStatus={setStatusFilter}
+              onPickTerritory={setTerrFilter}
+              onSelect={setSelected}
+              onLedger={() => setPanel("ledger")}
+            />
           </div>
+          <section className="order-1 flex min-h-0 min-w-0 flex-col lg:order-2">
+            <HudStats result={result} dataset={dataset} statusFilter={statusFilter} onStatus={setStatusFilter} onNotes={() => setPanel("notes")} />
+            {error && <p role="alert" className="px-4 py-2 text-[13px] text-declined">{error}</p>}
+            <WorldMap result={result} selected={selected} highlight={highlight} onSelect={setSelected} activeTerritory={terrFilter} onPickTerritory={setTerrFilter} />
+          </section>
           {notice && (
-            <div className="hud rise pointer-events-auto fixed left-1/2 bottom-[150px] z-30 flex -translate-x-1/2 items-center gap-2 rounded-lg border px-3 py-2 text-[13px]" role="status" style={{ background: "var(--hud-bg)", borderColor: "var(--hud-edge)", boxShadow: "0 0 30px -10px var(--gold)" }}>
+            <div className="rise fixed bottom-[96px] left-1/2 z-30 flex -translate-x-1/2 items-center gap-2 rounded-lg border border-line bg-surface px-3 py-2 text-[13px] shadow-xl lg:left-[calc(50%+200px)]" role="status">
               <Icon.Spark className="text-gold" />
               <span>{notice}</span>
               <button className="ml-2 text-muted hover:text-ink" onClick={() => setNotice(null)} aria-label="Dismiss notice"><Icon.Close size={14} /></button>
@@ -426,10 +407,10 @@ function WorldMap({ result, selected, highlight, onSelect, activeTerritory, onPi
   const [reduced, setReduced] = useState(false);
   useEffect(() => setReduced(window.matchMedia("(prefers-reduced-motion: reduce)").matches), []);
   return (
-    <div className="relative h-[52vh] w-full lg:fixed lg:inset-x-0 lg:bottom-0 lg:top-[53px] lg:h-auto" aria-label="Map of India with territories, stores and applications" style={{ background: "radial-gradient(90% 70% at 55% 35%, #1a2232 0%, #060a10 70%)" }}>
+    <div className="relative h-[55vh] w-full min-h-[340px] lg:h-auto lg:flex-1" aria-label="Map of India with territories, stores and applications" style={{ background: "radial-gradient(90% 70% at 55% 35%, #1a2232 0%, #060a10 70%)" }}>
       {!failed && <TerrainMap result={result} selected={selected} highlight={highlight} onSelect={onSelect} theme="dark" reducedMotion={reduced} onFail={(r) => setFailed(r)} activeTerritory={activeTerritory} onPickTerritory={onPickTerritory} />}
       <div className="world-vignette pointer-events-none absolute inset-0" aria-hidden />
-      {failed && <p className="hud absolute bottom-[150px] left-1/2 -translate-x-1/2 text-[12px] text-muted">Map unavailable ({failed}). Every decision is in the roster.</p>}
+      {failed && <p className="absolute bottom-24 left-1/2 -translate-x-1/2 text-[12px] text-muted">Map unavailable ({failed}). Every decision is in the roster.</p>}
     </div>
   );
 }

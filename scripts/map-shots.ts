@@ -29,6 +29,18 @@ mkdirSync(OUT, { recursive: true });
         await callout.click({ force: true });
         await page.waitForTimeout(3000);
         await page.screenshot({ path: `${OUT}/terrain-${vp.tag}-${scheme}-3-territory.png` });
+        // zoom further with the wheel over the map, as a user would
+        const mb = await page.locator(".maplibregl-canvas").boundingBox();
+        if (mb) {
+          await page.mouse.move(mb.x + mb.width / 2, mb.y + mb.height / 2);
+          for (let k = 0; k < 6; k++) { await page.mouse.wheel(0, -400); await page.waitForTimeout(250); }
+          await page.waitForTimeout(3500);
+          console.log(vp.tag, "zoom after wheel:", await page.evaluate(() => (window as unknown as { __tmap?: { getZoom(): number } }).__tmap?.getZoom()));
+          await page.screenshot({ path: `${OUT}/terrain-${vp.tag}-${scheme}-4-zoomed.png` });
+          await page.getByRole("button", { name: "map", exact: true }).click();
+          await page.waitForTimeout(3000);
+          await page.screenshot({ path: `${OUT}/terrain-${vp.tag}-${scheme}-5-streets.png` });
+        }
       }
       await ctx.close();
     }

@@ -3,7 +3,7 @@
 // India in 3D relief (satellite imagery on elevation), masked to India only, with territories popping
 // out as labelled callouts on poles. Native MapLibre layers so everything sits on the terrain.
 // Optional by design: any fatal error calls onFail and the parent falls back to the table.
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import maplibregl, { type GeoJSONSource, type Map as MLMap, type StyleSpecification } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import type { RunResult, Status } from "@/lib/engine/types";
@@ -35,6 +35,9 @@ function style(theme: "light" | "dark"): StyleSpecification {
       dem: { type: "raster-dem", tiles: ["https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png"], encoding: "terrarium", tileSize: 256, maxzoom: 13, attribution: "Elevation: Terrain Tiles (AWS Open Data, Mapzen)" },
       shade: { type: "raster-dem", tiles: ["https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png"], encoding: "terrarium", tileSize: 256, maxzoom: 13 },
       sat: { type: "raster", tiles: ["https://tiles.maps.eox.at/wmts/1.0.0/s2cloudless-2020_3857/default/g/{z}/{y}/{x}.jpg"], tileSize: 256, maxzoom: 14, attribution: "Imagery: Sentinel-2 cloudless by EOX (Copernicus Sentinel data 2020)" },
+      streets: { type: "raster", tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"], tileSize: 256, maxzoom: 19, attribution: "Map data © OpenStreetMap contributors" },
+      labels: { type: "raster", tiles: ["https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}"], tileSize: 256, maxzoom: 19, attribution: "Labels: Esri" },
+      roads: { type: "raster", tiles: ["https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Transportation/MapServer/tile/{z}/{y}/{x}"], tileSize: 256, maxzoom: 19 },
     },
     terrain: { source: "dem", exaggeration: 2.6 },
     sky: {
@@ -49,12 +52,15 @@ function style(theme: "light" | "dark"): StyleSpecification {
     layers: [
       { id: "bg", type: "background", paint: { "background-color": mask } },
       { id: "sat", type: "raster", source: "sat", paint: { "raster-saturation": -0.12, "raster-contrast": 0.08, "raster-brightness-max": theme === "dark" ? 0.88 : 1 } },
+      { id: "streets", type: "raster", source: "streets", layout: { visibility: "none" }, paint: { "raster-brightness-min": 0.92, "raster-brightness-max": 0.08, "raster-hue-rotate": 180, "raster-saturation": -0.35, "raster-contrast": 0.1 } },
       { id: "shade", type: "hillshade", source: "shade", paint: { "hillshade-exaggeration": 0.8, "hillshade-shadow-color": "#0b0f14", "hillshade-highlight-color": "#fff6e6", "hillshade-accent-color": "#3a2f22" } },
     ],
   } as StyleSpecification;
 }
 
 export default function TerrainMap(props: TerrainMapProps) {
+  const [mode, setMode] = useState<"satellite" | "map">("satellite");
+  const [legend, setLegend] = useState(false);
   const box = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MLMap | null>(null);
   const markers = useRef<maplibregl.Marker[]>([]);
@@ -74,7 +80,7 @@ export default function TerrainMap(props: TerrainMapProps) {
     }
     let map: MLMap;
     try {
-      map = new maplibregl.Map({ container: el, style: style(props.theme), ...INDIA_VIEW, maxPitch: 72, attributionControl: false, fadeDuration: 0 });
+      map = new maplibregl.Map({ container: el, style: style(props.theme), ...INDIA_VIEW, maxPitch: 72, maxZoom: 18, attributionControl: false, fadeDuration: 0 });
       // credits stay available behind an (i) button, collapsed so they never cover the console
       map.addControl(new maplibregl.AttributionControl({ compact: true }), "bottom-right");
       map.once("load", () => el.querySelector(".maplibregl-ctrl-attrib")?.classList.remove("maplibregl-compact-show"));
@@ -91,6 +97,8 @@ export default function TerrainMap(props: TerrainMapProps) {
       if (/style|webgl|context/i.test(msg) && !/tile|fetch|load|404|network/i.test(msg)) latest.current.onFail(msg.slice(0, 80));
     });
     el.addEventListener("webglcontextlost", () => latest.current.onFail("WebGL context lost"));
+    const ro = new ResizeObserver(() => map.resize());
+    ro.observe(el);
 
     map.on("load", async () => {
       try {
@@ -103,6 +111,8 @@ export default function TerrainMap(props: TerrainMapProps) {
         map.addSource("india", { type: "geojson", data: indiaF });
         map.addSource("ka", { type: "geojson", data: ka });
         map.addSource("states", { type: "geojson", data: states as GeoJSON.FeatureCollection });
+        map.addLayer({ id: "roads", type: "raster", source: "roads", minzoom: 9, maxzoom: 15, paint: { "raster-opacity": 0.75 } });
+        map.addLayer({ id: "labels", type: "raster", source: "labels", minzoom: 4.5, maxzoom: 15, paint: { "raster-opacity": 1 } });
         map.addLayer({ id: "mask", type: "fill", source: "mask", paint: { "fill-color": dark ? "#0b1820" : "#e9e4d8", "fill-opacity": 0.97 } });
         map.addLayer({ id: "states", type: "line", source: "states", paint: { "line-color": "#f5ecd8", "line-opacity": 0.22, "line-width": 0.6 } });
         map.addLayer({ id: "india-edge", type: "line", source: "india", paint: { "line-color": "#f5ecd8", "line-opacity": 0.75, "line-width": 1.2 } });
@@ -169,6 +179,16 @@ export default function TerrainMap(props: TerrainMapProps) {
           }, 120);
         });
         map.on("moveend", () => layoutCallouts(map));
+        // dramatic relief at state level, close to true relief at street level (labels stay readable)
+        let ex = 2.6;
+        map.on("zoomend", () => {
+          const z = map.getZoom();
+          const next = z >= 12 ? 1 : z >= 9 ? 1.6 : 2.6;
+          if (next !== ex) {
+            ex = next;
+            map.setTerrain({ source: "dem", exaggeration: next });
+          }
+        });
         ready.current = true;
         drawCallouts(map, data.callouts);
         intro(map);
@@ -178,6 +198,7 @@ export default function TerrainMap(props: TerrainMapProps) {
       }
     });
     return () => {
+      ro.disconnect();
       markers.current.forEach((m) => m.remove());
       markers.current = [];
       map.remove();
@@ -208,7 +229,7 @@ export default function TerrainMap(props: TerrainMapProps) {
     if (props.selected) {
       const f = buildTerrainData(props.result).stones.features.find((x) => x.properties?.key === props.selected);
       if (f) {
-        const to = { center: f.geometry.coordinates as [number, number], zoom: Math.max(map.getZoom(), 10.5), pitch: 60 };
+        const to = { center: f.geometry.coordinates as [number, number], zoom: Math.max(map.getZoom(), 13), pitch: 55 };
         if (props.reducedMotion) map.jumpTo(to);
         else map.easeTo({ ...to, duration: 1400 });
       }
@@ -253,6 +274,17 @@ export default function TerrainMap(props: TerrainMapProps) {
     }
   }
 
+  function switchMode(next: "satellite" | "map") {
+    setMode(next);
+    const map = mapRef.current;
+    if (!map || !ready.current) return;
+    map.setLayoutProperty("sat", "visibility", next === "satellite" ? "visible" : "none");
+    map.setLayoutProperty("shade", "visibility", next === "satellite" ? "visible" : "none");
+    map.setLayoutProperty("streets", "visibility", next === "map" ? "visible" : "none");
+    map.setLayoutProperty("labels", "visibility", next === "satellite" ? "visible" : "none");
+    map.setLayoutProperty("roads", "visibility", next === "satellite" ? "visible" : "none");
+  }
+
   function drawCallouts(map: MLMap, callouts: Callout[], update = false) {
     markers.current.forEach((m) => m.remove());
     markers.current = [];
@@ -271,7 +303,7 @@ export default function TerrainMap(props: TerrainMapProps) {
         ev.stopPropagation();
         const cur = latest.current.activeTerritory;
         latest.current.onPickTerritory(cur === c.key || c.noTerritory ? null : c.key);
-        const to = { center: c.lngLat, zoom: 9.2, pitch: 62, bearing: map.getBearing() };
+        const to = { center: c.lngLat, zoom: 10.6, pitch: 55, bearing: map.getBearing() };
         if (latest.current.reducedMotion) map.jumpTo(to);
         else map.flyTo({ ...to, duration: 1800, essential: true });
       });
@@ -282,6 +314,12 @@ export default function TerrainMap(props: TerrainMapProps) {
   }
 
   function intro(map: MLMap) {
+    if (map.getContainer().clientHeight < 80) {
+      // the column has not been laid out yet; try again shortly
+      setTimeout(() => intro(map), 150);
+      return;
+    }
+    map.resize();
     const b = karnatakaBounds(latest.current.result);
     const cam = map.cameraForBounds(b, { padding: { top: 140, bottom: 40, left: 40, right: 40 } });
     const to = { center: cam?.center ?? [76.2, 14.6], zoom: Math.min(7.2, (cam?.zoom ?? 6.5) + 0.2), pitch: 58, bearing: -16 };
@@ -327,17 +365,31 @@ export default function TerrainMap(props: TerrainMapProps) {
     <div className="relative h-full w-full">
       {/* inline position: MapLibre adds its own position:relative class to the container */}
       <div ref={box} style={{ position: "absolute", inset: 0 }} />
-      <div className="tm-legend pointer-events-none absolute bottom-3 left-3 max-w-[300px] lg:bottom-[146px] lg:left-[330px] rounded-[10px] px-3 py-2 text-[11.5px] leading-snug">
-        <div className="flex flex-wrap gap-x-2.5 gap-y-1">
-          {STATUS_ORDER.slice(0, 5).map((s) => (
-            <span key={s} className="inline-flex items-center gap-1">
-              <i className="inline-block size-2 rounded-full" style={{ background: STATUS_HEX[s] }} />
-              {s === "ON_HOLD" ? "On hold" : s.charAt(0) + s.slice(1).toLowerCase()}
-            </span>
-          ))}
-        </div>
-        <div className="mt-1 opacity-80">Gold blocks: slots (solid filled, pale open, grey blocked by pins). Rings: our stores with 2 km catchment.</div>
-        <div className="mt-0.5 opacity-60">Pin centres approximate; no catchment boundaries provided. Relief exaggerated 2.6×.</div>
+      <div className="absolute left-3 top-3 z-[2] flex overflow-hidden rounded-md border border-white/10 bg-[#0c131c]/90 text-[12px] font-medium shadow-lg" role="group" aria-label="Base map">
+        {(["satellite", "map"] as const).map((m) => (
+          <button key={m} type="button" onClick={() => switchMode(m)} aria-pressed={mode === m} className={`px-3 py-1.5 capitalize transition-colors ${mode === m ? "bg-white/12 text-white" : "text-white/60 hover:text-white"}`}>
+            {m}
+          </button>
+        ))}
+      </div>
+      <div className="absolute bottom-3 left-3 z-[2] max-w-[300px] text-[11.5px] leading-snug">
+        {legend && (
+          <div className="tm-legend mb-2 rounded-md px-3 py-2">
+            <div className="flex flex-wrap gap-x-2.5 gap-y-1">
+              {STATUS_ORDER.slice(0, 5).map((st) => (
+                <span key={st} className="inline-flex items-center gap-1">
+                  <i className="inline-block size-2 rounded-full" style={{ background: STATUS_HEX[st] }} />
+                  {st === "ON_HOLD" ? "On hold" : st.charAt(0) + st.slice(1).toLowerCase()}
+                </span>
+              ))}
+            </div>
+            <div className="mt-1 opacity-80">Gold blocks: slots (solid filled, pale open, grey blocked by pins). Rings: our stores with 2 km catchment.</div>
+            <div className="mt-0.5 opacity-60">Pin centres approximate; no catchment boundaries provided. Relief exaggerated 2.6×.</div>
+          </div>
+        )}
+        <button type="button" onClick={() => setLegend((v) => !v)} aria-expanded={legend} className="rounded-md border border-white/10 bg-[#0c131c]/90 px-2.5 py-1 text-[12px] text-white/75 shadow-lg hover:text-white">
+          {legend ? "Hide legend" : "Legend"}
+        </button>
       </div>
     </div>
   );

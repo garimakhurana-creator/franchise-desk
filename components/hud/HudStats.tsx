@@ -1,92 +1,57 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import type { RunResult, Status } from "@/lib/engine/types";
-import { Icon, StatusGlyph, STATUS_VAR } from "../icons";
+import type { Dataset, RunResult, Status } from "@/lib/engine/types";
+import { Icon, STATUS_LABEL, STATUS_VAR } from "../icons";
 
-const COUNTERS: { s: Status; label: string }[] = [
-  { s: "APPROVED", label: "Approved" },
-  { s: "CONDITIONAL", label: "Reserved" },
-  { s: "WAITLISTED", label: "Waitlist" },
-  { s: "ON_HOLD", label: "On hold" },
-  { s: "DECLINED", label: "Declined" },
-];
+const ORDER: Status[] = ["APPROVED", "CONDITIONAL", "WAITLISTED", "ON_HOLD", "DECLINED"];
 
-/** Counts up from 0 once, then follows the value. Instant under reduced motion. */
-function useCount(target: number) {
-  const [v, setV] = useState(0);
-  useEffect(() => {
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      setV(target);
-      return;
-    }
-    let raf = 0;
-    const from = v;
-    const t0 = performance.now();
-    const step = (t: number) => {
-      const k = Math.min(1, (t - t0) / 900);
-      setV(Math.round(from + (target - from) * (1 - Math.pow(1 - k, 3))));
-      if (k < 1) raf = requestAnimationFrame(step);
-    };
-    raf = requestAnimationFrame(step);
-    return () => cancelAnimationFrame(raf);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [target]);
-  return v;
-}
-
-function Counter({ s, label, n, on, onClick }: { s: Status; label: string; n: number; on: boolean; onClick: () => void }) {
-  const v = useCount(n);
-  return (
-    <button type="button" onClick={onClick} aria-pressed={on} className={`group flex min-w-[92px] items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-left transition-colors ${on ? "bg-surface-3" : "hover:bg-surface-2"}`} title={`Filter the roster: ${label}`}>
-      <StatusGlyph status={s} size={18} />
-      <span className="flex flex-col leading-none">
-        <span className="hud-num glow text-[22px]" style={{ color: STATUS_VAR[s] }}>{v}</span>
-        <span className="hud-label mt-1 text-[10px]">{label}</span>
-      </span>
-    </button>
-  );
-}
-
-export function HudStats({ result, statusFilter, onStatus, sample }: { result: RunResult; statusFilter: Status[]; onStatus: (s: Status[]) => void; sample: boolean }) {
+/** Slim KPI strip above the map: the run at a glance. Status counts filter the list. */
+export function HudStats({ result, dataset, statusFilter, onStatus, onNotes }: { result: RunResult; dataset: Dataset; statusFilter: Status[]; onStatus: (s: Status[]) => void; onNotes: () => void }) {
   const count = (s: Status) => result.decisions.filter((d) => d.status === s).length;
   const cap = result.territories.reduce((n, t) => n + t.effectiveCapacity, 0);
   const used = result.territories.reduce((n, t) => n + t.approved.length + t.conditional.length, 0);
   const moving = count("APPROVED") + count("CONDITIONAL");
+  const issues = dataset.notes.filter((n) => n.severity !== "info").length;
   const toggle = (s: Status) => onStatus(statusFilter.includes(s) ? statusFilter.filter((x) => x !== s) : [...statusFilter, s]);
   return (
-    <div className="hud hud-panel flex flex-wrap items-center gap-x-2 gap-y-2 px-3 py-2">
-      <div className="mr-2 flex flex-col leading-none">
-        <span className="hud-label">Moving forward</span>
-        <span className="hud-num mt-1 text-[26px] text-ink">
-          {moving}
-          <span className="text-[15px] text-muted"> / {result.decisions.length}</span>
-        </span>
+    <div className="flex flex-wrap items-center gap-x-5 gap-y-2 border-b border-line bg-[#080e16] px-4 py-2.5">
+      <div className="leading-tight">
+        <div className="text-[12px] text-muted">Moving forward</div>
+        <div className="text-[18px] font-semibold">
+          <span className="num">{moving}</span>
+          <span className="num text-[13px] font-normal text-muted"> of {result.decisions.length}</span>
+        </div>
       </div>
-      <span className="mx-1 hidden h-9 w-px bg-line sm:block" aria-hidden />
-      {COUNTERS.map((c) => (
-        <Counter key={c.s} s={c.s} label={c.label} n={count(c.s)} on={statusFilter.includes(c.s)} onClick={() => toggle(c.s)} />
-      ))}
-      <span className="mx-1 hidden h-9 w-px bg-line lg:block" aria-hidden />
-      <div className="flex flex-col leading-none" title="Usable slots = the smaller of open slots and free pins in each territory">
-        <span className="hud-label">Slots filled</span>
-        <span className="mt-1.5 flex items-center gap-1">
-          {Array.from({ length: cap }).map((_, i) => (
-            <i key={i} className={`pip ${i < used ? "filled" : "open"}`} style={{ width: 10, height: 12 }} />
-          ))}
-          <span className="hud-num ml-1.5 text-[14px] text-ink-2">
-            {used}/{cap}
-          </span>
-        </span>
+      <span className="hidden h-8 w-px bg-line sm:block" aria-hidden />
+      {ORDER.map((s) => {
+        const on = statusFilter.includes(s);
+        return (
+          <button key={s} type="button" onClick={() => toggle(s)} aria-pressed={on} className={`rounded-md px-1.5 py-0.5 text-left leading-tight transition-colors ${on ? "bg-surface-2" : "hover:bg-surface"}`} title={`Show only ${STATUS_LABEL[s].toLowerCase()}`}>
+            <div className="flex items-center gap-1.5 text-[12px] text-muted">
+              <i className="inline-block size-1.5 rounded-full" style={{ background: STATUS_VAR[s] }} />
+              {STATUS_LABEL[s]}
+            </div>
+            <div className="num text-[18px] font-semibold" style={{ color: on ? STATUS_VAR[s] : undefined }}>
+              {count(s)}
+            </div>
+          </button>
+        );
+      })}
+      <span className="hidden h-8 w-px bg-line sm:block" aria-hidden />
+      <div className="leading-tight" title="Usable slots = the smaller of open slots and free pins in each territory">
+        <div className="text-[12px] text-muted">Slots filled</div>
+        <div className="text-[18px] font-semibold">
+          <span className="num">{used}</span>
+          <span className="num text-[13px] font-normal text-muted"> / {cap}</span>
+        </div>
       </div>
-      <div className="ml-auto flex items-center gap-2">
-        {sample && <span className="hud-label rounded px-2 py-1 text-[10px]" style={{ background: "var(--gold-soft)", color: "var(--gold)" }}>Sample data</span>}
-        <span
-          className="hud flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[12px] font-semibold"
-          style={{ color: result.pinConflicts ? "var(--declined)" : "var(--approved)", background: `color-mix(in srgb, ${result.pinConflicts ? "var(--declined)" : "var(--approved)"} 12%, transparent)`, boxShadow: `inset 0 0 0 1px color-mix(in srgb, ${result.pinConflicts ? "var(--declined)" : "var(--approved)"} 40%, transparent)` }}
-          title="No two approved or conditional partners share a pin code, and none sits on an existing store's pin."
-        >
-          <Icon.Shield size={16} /> Pin rule verified: <span className="hud-num">{result.pinConflicts}</span> conflicts
+      <div className="ml-auto flex flex-wrap items-center gap-3 text-[12px]">
+        <button type="button" onClick={onNotes} className="text-muted underline decoration-dotted underline-offset-2 hover:text-ink">
+          {dataset.applications.length} read · {dataset.rowsIgnored.length} ignored · {issues} issue{issues === 1 ? "" : "s"}
+        </button>
+        {dataset.source === "sample" && <span className="rounded px-1.5 py-0.5 font-semibold" style={{ background: "var(--gold-soft)", color: "var(--gold)" }}>Sample data</span>}
+        <span className="inline-flex items-center gap-1.5 font-medium" style={{ color: result.pinConflicts ? "var(--declined)" : "var(--approved)" }} title="No two approved or conditional partners share a pin code, and none sits on an existing store's pin.">
+          <Icon.Shield size={15} /> Pin rule verified: <span className="num">{result.pinConflicts}</span> conflicts
         </span>
       </div>
     </div>

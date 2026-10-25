@@ -285,69 +285,32 @@ table td.num {
   padding: 6px 9px;
 }
 
-/* ---------- Game HUD ---------- */
+/* ---------- Dashboard surfaces (calm, internal tool) ---------- */
 .hud {
-  font-family: var(--font-hud);
+  font-family: var(--font-sans);
 }
 .hud-panel {
-  position: relative;
-  background: linear-gradient(180deg, rgba(14, 22, 33, 0.92), rgba(7, 12, 19, 0.9));
-  border: 1px solid rgba(120, 150, 185, 0.16);
+  background: #0b121b;
+  border: 1px solid #1c2939;
   border-radius: 10px;
-  box-shadow: 0 0 0 1px #00000066, 0 24px 60px -30px #000, inset 0 1px 0 #ffffff0a;
-  backdrop-filter: blur(6px);
-}
-/* corner brackets, like a game frame */
-.hud-panel::before,
-.hud-panel::after {
-  content: "";
-  position: absolute;
-  width: 14px;
-  height: 14px;
-  border: 2px solid var(--gold);
-  opacity: 0.75;
-  pointer-events: none;
-}
-.hud-panel::before {
-  top: -1px;
-  left: -1px;
-  border-right: 0;
-  border-bottom: 0;
-  border-top-left-radius: 10px;
-}
-.hud-panel::after {
-  bottom: -1px;
-  right: -1px;
-  border-left: 0;
-  border-top: 0;
-  border-bottom-right-radius: 10px;
 }
 .hud-label {
-  font-family: var(--font-hud);
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
+  font-size: 12px;
+  font-weight: 500;
   color: var(--muted);
 }
 .hud-num {
-  font-family: var(--font-hud);
   font-variant-numeric: tabular-nums;
-  font-weight: 700;
-}
-.glow {
-  text-shadow: 0 0 18px currentColor;
+  font-weight: 600;
 }
 .pip {
   display: inline-block;
-  width: 14px;
-  height: 14px;
-  transform: skewX(-12deg);
-  border-radius: 2px;
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
 }
 .pip.filled {
   background: var(--gold);
-  box-shadow: 0 0 10px #f5c45199;
 }
 .pip.reserved {
   color: var(--gold);
@@ -356,62 +319,11 @@ table td.num {
 }
 .pip.open {
   box-shadow: inset 0 0 0 1.5px #f5c45199;
-  animation: pip-breathe 2.4s ease-in-out infinite;
 }
 .pip.blocked {
-  box-shadow: inset 0 0 0 1.5px #5a6b80;
-  background: linear-gradient(135deg, transparent 45%, #5a6b80 45% 55%, transparent 55%);
-}
-@keyframes pip-breathe {
-  50% {
-    box-shadow: inset 0 0 0 1.5px var(--gold), 0 0 12px #f5c45166;
-  }
-}
-.xp {
-  position: relative;
-  height: 6px;
-  border-radius: 3px;
-  background: #1b2838;
-  overflow: visible;
-}
-.xp > i {
-  position: absolute;
-  inset: 0 auto 0 0;
-  border-radius: 3px;
-}
-.xp > b {
-  position: absolute;
-  top: -3px;
-  bottom: -3px;
-  width: 2px;
-  background: #eef1f5aa;
-}
-.avatar {
-  display: grid;
-  place-items: center;
-  width: 38px;
-  height: 38px;
-  flex: none;
-  clip-path: polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0 50%);
-  font-family: var(--font-hud);
-  font-weight: 700;
-  font-size: 13px;
-  color: #06090e;
-}
-.card-in {
-  animation: card-in 480ms var(--ease-out) both;
-  animation-delay: var(--i, 0ms);
-}
-@keyframes card-in {
-  from {
-    opacity: 0;
-    transform: translateX(14px);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
+  box-shadow: inset 0 0 0 1.5px #4a5a6e;
+  background: linear-gradient(135deg, transparent 45%, #4a5a6e 45% 55%, transparent 55%);
 }
 .world-vignette {
-  background: radial-gradient(120% 80% at 50% 40%, transparent 55%, #060a10 100%), linear-gradient(180deg, #060a10cc 0%, transparent 14%, transparent 80%, #060a10 100%);
+  background: linear-gradient(180deg, #060a1066 0%, transparent 10%, transparent 88%, #060a1099 100%);
 }
