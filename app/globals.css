@@ -195,4 +195,19 @@ table td.num {
     background: #fff;
     color: #000;
   }
+  /* decision pack: only the open card, full width, all sections expanded */
+  body.print-card main,
+  body.print-card [aria-label="Map of territories, stores and applications"] {
+    display: none !important;
+  }
+  body.print-card aside[aria-label^="Decision for"] {
+    position: static !important;
+    width: 100% !important;
+    overflow: visible !important;
+    box-shadow: none !important;
+    border: 0 !important;
+  }
+  body.print-card details > *:not(summary) {
+    display: block !important;
+  }
 }

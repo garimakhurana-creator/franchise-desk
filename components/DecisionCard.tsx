@@ -60,7 +60,20 @@ export function DecisionCard({
         <span className="num text-[15px] font-semibold">{d.id}</span>
         <span className="truncate text-[14px] text-ink-2">{d.name}</span>
         <span className="ml-auto"><StatusChip status={d.status} /></span>
-        <button type="button" onClick={onClose} className="grid size-8 place-items-center rounded-full hover:bg-surface-2" aria-label="Close decision"><Icon.Close /></button>
+        <button
+          type="button"
+          onClick={() => {
+            document.body.classList.add("print-card");
+            window.print();
+            setTimeout(() => document.body.classList.remove("print-card"), 500);
+          }}
+          className="no-print grid size-8 place-items-center rounded-full hover:bg-surface-2"
+          aria-label="Print this decision"
+          title="Print or save as PDF"
+        >
+          <Icon.Download />
+        </button>
+        <button type="button" onClick={onClose} className="no-print grid size-8 place-items-center rounded-full hover:bg-surface-2" aria-label="Close decision"><Icon.Close /></button>
       </div>
 
       <div className="px-5 pb-28">
