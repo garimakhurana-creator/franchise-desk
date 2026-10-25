@@ -27,9 +27,20 @@
 - Rules first: the model is only called when the rules cannot read the message (fast, deterministic, quota-safe). Rules handle Hindi/Kannada/Hinglish updates and questions that include an ID.
 - scripts/acceptance.ts passes in live, no-key and no-server modes, locally (prod build) and on the live URL. stress500 renders in under 0.9 s.
 
-## Known gaps
-- Answers to Hindi/Kannada questions are in English (the rule path says so). A post-checked translation step is planned.
-- Design phase (3D India map, slot towers, motion) not started.
+## Phase 3b, red team: DONE
+- 41 adversarial rows + 6 messy territories (tests/redteam). 10 defects found and fixed (same-property needs same tenure, 1st floor, injection in English/Hindi/Kannada, competing brand in business text, format cap for oversized spaces, no decline on implausible size, outlier threshold, negative wording, zero-slot wording, proven-operator code). Regression tests in tests/redteam.test.ts; EDGE_CASES.md.
+
+## Phase 4, design: DONE (with known gaps)
+- 3D India-only Expansion Map (MapLibre globe intro -> tilted 54° map with deck.gl slot towers, stones, discs, contested arcs), lazy-loaded, falls back to the table on any failure. Ledger summary, header and card polish over three screenshot rounds (docs/screens). DESIGN_DECISIONS.md.
+- Known gaps: overlap lenses, update ripples, presentation mode.
+
+## Phase 5, extras: PARTIAL
+- Done: control tower (call-first, openings, gap, capacity), integrity self-test, simulate 14/30 days, Hindi/Kannada answers with post-checked translation, held-in-N% stability, print decision pack, 404.
+- Not built: Places/footfall enrichment (optional keys), simulated telemetry toggle, presentation mode.
+
+## Phase 6, review and release: DONE
+- SELF_SCORE.md (94/100), JUDGE_READINESS.md, DEMO_SCRIPT.md (numbers checked against the engine), ROADMAP.md.
+- Release incident: a build passed locally but failed live acceptance (Enter lost while the map loaded on a slow connection). Production promoted back to the last good deployment within a minute; fixed with an uncontrolled input; slow-network acceptance mode added.
 
 ## Next step
-Phase 3b red team (30+ adversarial rows), then Phase 4 design.
+Optional polish only: overlap lenses and update ripples on the map, presentation mode.

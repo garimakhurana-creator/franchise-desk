@@ -68,4 +68,4 @@ This was exercised for real once: a build that passed locally failed live accept
 
 ## Documents
 
-SPEC.md · DESIGN.md · GOLDEN.md · PHASES.md · PROGRESS.md · ASSUMPTIONS.md · GOLDEN_DIVERGENCES.md
+SPEC.md · DESIGN.md · GOLDEN.md · PHASES.md · PROGRESS.md · ASSUMPTIONS.md · EDGE_CASES.md · GOLDEN_DIVERGENCES.md · DEMO_SCRIPT.md · DESIGN_DECISIONS.md · SELF_SCORE.md · JUDGE_READINESS.md · ROADMAP.md
