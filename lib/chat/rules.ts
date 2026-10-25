@@ -91,10 +91,10 @@ export function extractFacts(text: string, current?: { space: SpaceKind | null; 
   let found = false;
   if (/\b(owned|owns|bought|purchased|own (a|the|his|her) (space|shop|site|premises))\b/.test(t)) changes.space = "Owned";
   else if (/\b(rented|on rent|leased|signed a lease|rents|renting|lease signed)\b/.test(t)) changes.space = "Rented";
-  if (/\b(found|got|has|have|secured|identified|located|finali[sz]ed)\b.{0,25}\b(space|shop|site|unit|premises|place|location|property)\b/.test(t) || changes.space) found = true;
+  if (/\b(found|got|has|have|secured|identified|located|finali[sz]ed)\b.{0,25}\b(space|shop|site|unit|premises|place|location|property)\b/.test(t) || /जगह मिल|दुकान मिल|ಜಾಗ ಸಿಕ್ಕಿ|ಅಂಗಡಿ ಸಿಕ್ಕಿ|jagah mil|dukaan mil/.test(t) || changes.space) found = true;
 
   // size
-  const sz = /(\d[\d,]*(?:\.\d+)?)\s*(sq\.?\s*ft|sqft|sft|square feet|sq feet|sq\.?\s*m\b|sqm|square met(?:er|re)s?|sq\.?\s*yards?|gaj)/i.exec(text);
+  const sz = /(\d[\d,]*(?:\.\d+)?)\s*(sq\.?\s*ft|sqft|sft|square feet|sq feet|sq\.?\s*m\b|sqm|square met(?:er|re)s?|sq\.?\s*yards?|gaj|वर्ग\s*(?:फुट|फ़ुट)|स्क्वायर\s*(?:फुट|फ़ुट)|ಚದರ\s*ಅಡಿ)/i.exec(text);
   if (sz) {
     let v = parseFloat(sz[1].replace(/,/g, ""));
     if (/m\b|met/i.test(sz[2]) && !/ft|feet/i.test(sz[2])) {
@@ -107,7 +107,7 @@ export function extractFacts(text: string, current?: { space: SpaceKind | null; 
     changes.size = v;
   }
   // floor
-  if (/ground[- ]?floor|\bground\b|ग्राउंड|ನೆಲ ಮಹಡಿ/.test(t)) changes.floor = "Ground";
+  if (/ground[- ]?floor|\bground\b|ग्राउंड|भूतल|ನೆಲ ?ಮಹಡಿ/.test(t)) changes.floor = "Ground";
   else if (/\bmall\b/.test(t)) changes.floor = "Mall";
   else if (/(first|1st|second|2nd|upper|top)[- ]?floor|upstairs/.test(t)) changes.floor = "Upper";
 
