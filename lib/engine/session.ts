@@ -175,7 +175,8 @@ export function diff(before: RunResult, after: RunResult): Change[] {
     const snap = (d: Decision) => ({ status: d.status, score: d.score?.total ?? null, rank: d.rank ? `${d.rank.k} of ${d.rank.n}` : null, queue: d.queuePos });
     const sb = snap(p);
     const sa = snap(a);
-    if (sb.status === sa.status && sb.score === sa.score && sb.rank === sa.rank && sb.queue === sa.queue && p.why === a.why) continue;
+    // Compare decisions, not wording: status, score, rank, queue and the primary reason.
+    if (sb.status === sa.status && sb.score === sa.score && sb.rank === sa.rank && sb.queue === sa.queue && p.codes[0] === a.codes[0]) continue;
     const dir = statusRank[sa.status] > statusRank[sb.status] ? "up" : statusRank[sa.status] < statusRank[sb.status] ? "down" : "same";
     out.push({ key: a.key, id: a.id, before: sb, after: sa, direction: dir, why: a.why });
   }
