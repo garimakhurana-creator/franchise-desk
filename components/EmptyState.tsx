@@ -5,6 +5,7 @@ import dynamic from "next/dynamic";
 import { Icon } from "./icons";
 import { cityPoints } from "@/lib/map/terrain";
 import { PinLegend } from "./map/PinLegend";
+import { loadKarnataka, territoryZones } from "@/lib/map/zones";
 import { parseWorkbook } from "@/lib/parse/parse";
 import { readWorkbook } from "@/lib/parse/xlsx";
 import reference from "@/lib/engine/reference.json";
@@ -39,6 +40,11 @@ export function EmptyState({ onFile, onSample, error, loading }: { onFile: (f: F
   }, []);
   const points = useMemo(() => cityPoints().map((p) => (counts ? { ...p, count: counts[p.title] ?? 0 } : p)), [counts]);
   const [picked, setPicked] = useState<string | null>(null);
+  const [ka, setKa] = useState<GeoJSON.Feature | null>(null);
+  useEffect(() => {
+    loadKarnataka().then(setKa);
+  }, []);
+  const zones = useMemo(() => territoryZones(points, ka), [points, ka]);
   const [reduced, setReduced] = useState(false);
   const [map3d, setMap3d] = useState(true);
   useEffect(() => setReduced(window.matchMedia("(prefers-reduced-motion: reduce)").matches), []);
@@ -60,7 +66,7 @@ export function EmptyState({ onFile, onSample, error, loading }: { onFile: (f: F
         if (f) onFile(f);
       }}
     >
-      {map3d && <Diorama points={points} activeKey={picked} onPick={(k) => setPicked((p) => (p === k ? null : k))} reducedMotion={reduced} onFail={() => setMap3d(false)} autoRotate hint="Drag to rotate · scroll to zoom" />}
+      {map3d && <Diorama source={{ kind: "region" }} points={points} overlay={zones} activeKey={picked} onPick={(k) => setPicked((p) => (p === k ? null : k))} reducedMotion={reduced} onFail={() => setMap3d(false)} autoRotate hint="Drag to rotate · scroll to zoom" />}
       <PinLegend points={points} sample />
       {!map3d && <FlatIndia points={points} activeKey={picked} onPick={(k) => setPicked((p) => (p === k ? null : k))} />}
       {over && <div className="pointer-events-none absolute inset-3 z-[4] grid place-items-center rounded-2xl border-2 border-dashed border-[#b4a6ff] bg-[#8f7cff14] text-[16px] font-semibold text-white">Drop the Excel file to open it</div>}

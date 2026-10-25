@@ -578,3 +578,22 @@ table td.num {
 .dio-tag.is-active {
   z-index: 100000 !important;
 }
+/* pins take their own colour when one is given (request status), neon violet otherwise */
+.dio-tag .dp-head {
+  background: linear-gradient(135deg, color-mix(in srgb, var(--pin, #8f7cff) 45%, white) 0%, var(--pin, #8f7cff) 50%, color-mix(in srgb, var(--pin, #8f7cff) 65%, black) 100%);
+  box-shadow: 0 0 0 1.5px #ffffffcc inset, 0 0 16px 2px color-mix(in srgb, var(--pin, #8f7cff) 70%, transparent), 0 6px 12px -4px #000c;
+}
+.dio-tag .dp-pulse {
+  background: var(--pin, #8f7cff);
+}
+.dio-tag.is-orphan .dp-head {
+  background: linear-gradient(135deg, #e3e3ea, #8e8ea6);
+  box-shadow: 0 0 0 1.5px #ffffff99 inset, 0 6px 12px -4px #000c;
+}
+.dio-tag.is-passive {
+  pointer-events: none;
+  opacity: 0.9;
+}
+.dio-tag.is-active .dp-head {
+  box-shadow: 0 0 0 2px #fff inset, 0 0 26px 6px color-mix(in srgb, var(--pin, #8f7cff) 85%, transparent);
+}

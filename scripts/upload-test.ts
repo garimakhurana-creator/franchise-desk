@@ -20,7 +20,7 @@ mkdirSync(OUT, { recursive: true });
     page.on("pageerror", (e) => console.log(vp.tag, "pageerror:", e.message.slice(0, 200)));
     await page.goto(BASE, { waitUntil: "domcontentloaded" });
     await page.waitForSelector("body[data-ready]", { timeout: 60000 });
-    await page.waitForSelector(".dio-tag", { timeout: 60000 });
+    await page.waitForSelector(".dio-tag[data-key]", { timeout: 60000 });
     await page.waitForTimeout(4000);
     await page.screenshot({ path: `${OUT}/upload-${vp.tag}-0-first-page.png` });
     const upload = page.locator("label[for=file]");
@@ -37,7 +37,8 @@ mkdirSync(OUT, { recursive: true });
 
     // the golden workbook
     await page.setInputFiles("#file", path.resolve("tests/golden/golden.xlsx"));
-    await page.waitForSelector("[data-key]", { timeout: 60000 });
+    await page.getByRole("tab", { name: "Summary" }).click({ timeout: 60000 });
+    await page.waitForSelector("[data-key][data-status]", { timeout: 60000 });
     const rows = await page.locator("[data-key][data-status]").count();
     check(rows === 22, `${vp.tag}: golden.xlsx opened with ${rows} applications (want 22)`);
     await page.waitForTimeout(5000);
@@ -50,7 +51,8 @@ mkdirSync(OUT, { recursive: true });
   await page.waitForSelector("body[data-ready]", { timeout: 60000 });
   const t0 = Date.now();
   await page.setInputFiles("#file", path.resolve("tests/golden/stress500.xlsx"));
-  await page.waitForSelector("[data-key]", { timeout: 60000 });
+  await page.getByRole("tab", { name: "Summary" }).click({ timeout: 60000 });
+  await page.waitForSelector("[data-key][data-status]", { timeout: 60000 });
   check(true, `stress500.xlsx opened in ${Date.now() - t0} ms`);
   await browser.close();
   console.log(failed ? `${failed} failed` : "all upload checks passed");

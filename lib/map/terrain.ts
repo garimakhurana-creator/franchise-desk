@@ -170,6 +170,10 @@ export interface MapPoint {
   muted?: boolean;
   /** New requests in this place, shown on its pin. */
   count?: number;
+  /** Pin colour (for example a request's status); neon violet when absent. */
+  color?: string;
+  /** Shown but not clickable (for example our existing stores). */
+  passive?: boolean;
 }
 
 export function territoryPoints(result: RunResult): MapPoint[] {

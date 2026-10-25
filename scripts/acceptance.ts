@@ -38,6 +38,8 @@ async function upload(page: Page, file: string) {
   await page.goto(BASE, { waitUntil: "domcontentloaded" });
   await page.waitForSelector("body[data-ready]", { timeout: 30000 });
   await page.setInputFiles("#file", file);
+  // the app opens on Explore (the map); the list and the desk live on Summary
+  await page.getByRole("tab", { name: "Summary" }).click({ timeout: 20000 });
   await page.waitForSelector("[data-key][data-status]", { timeout: 20000 });
 }
 

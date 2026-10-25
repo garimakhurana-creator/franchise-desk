@@ -106,3 +106,27 @@ export function areaKm2(poly: GeoJSON.Polygon): number {
   for (let i = 1; i < r.length; i++) a += (r[i - 1][0] * kx) * (r[i][1] * ky) - (r[i][0] * kx) * (r[i - 1][1] * ky);
   return Math.abs(a / 2);
 }
+
+/**
+ * How much of a 2 km catchment our existing stores already serve: the share of the circle that lies within
+ * 2 km of any store (sampled on a fine grid). Measured from store locations, not assumed.
+ */
+export function catchmentCoverage(at: { lat: number; lon: number }, stores: { lat: number; lon: number }[]): { km2: number; servedPct: number } {
+  const km2 = Math.PI * SERVICE_KM * SERVICE_KM;
+  const near = stores.filter((s) => Math.hypot((s.lat - at.lat) * 110.574, (s.lon - at.lon) * 111.32 * Math.cos((at.lat * Math.PI) / 180)) < SERVICE_KM * 2);
+  if (!near.length) return { km2, servedPct: 0 };
+  let inside = 0;
+  let served = 0;
+  const N = 40;
+  for (let i = 0; i <= N; i++)
+    for (let j = 0; j <= N; j++) {
+      const dx = ((i / N) * 2 - 1) * SERVICE_KM;
+      const dy = ((j / N) * 2 - 1) * SERVICE_KM;
+      if (dx * dx + dy * dy > SERVICE_KM * SERVICE_KM) continue;
+      inside++;
+      const lat = at.lat + dy / 110.574;
+      const lon = at.lon + dx / (111.32 * Math.cos((at.lat * Math.PI) / 180));
+      if (near.some((s) => Math.hypot((s.lat - lat) * 110.574, (s.lon - lon) * 111.32 * Math.cos((lat * Math.PI) / 180)) < SERVICE_KM)) served++;
+    }
+  return { km2, servedPct: Math.round((served / inside) * 100) };
+}

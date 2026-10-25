@@ -12,6 +12,7 @@ import { ParsedSchema, type Parsed } from "@/lib/chat/commands";
 import type { Dataset, Decision, RunResult, Status } from "@/lib/engine/types";
 import { Icon } from "./icons";
 import { EmptyState } from "./EmptyState";
+import { Explore } from "./Explore";
 import { ResultsTable } from "./ResultsTable";
 import { DecisionCard } from "./DecisionCard";
 import { AskDesk, type Turn } from "./AskDesk";
@@ -39,6 +40,8 @@ export default function Desk() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [selected, setSelected] = useState<string | null>(null);
+  // Explore (the map experience) is the default; Summary holds the counts, list, ledger and the desk
+  const [tab, setTab] = useState<"explore" | "summary">("explore");
   const [turns, setTurns] = useState<Turn[]>([]);
   const [busy, setBusy] = useState(false);
   const [ai, setAi] = useState<"unknown" | "on" | "off">("unknown");
@@ -77,6 +80,7 @@ export default function Desk() {
       setChat({ session: newSession(ds, DEFAULT_POLICY, today), memory: { lastIds: [], lastTerritories: [] }, pending: null });
       setTurns([]);
       setSelected(null);
+      setTab("explore");
       setTerrFilter(null);
       setStatusFilter([]);
       setHighlight([]);
@@ -263,7 +267,16 @@ export default function Desk() {
               <span className="text-[11.5px] text-muted">Partner review · expansion team</span>
             </span>
           </a>
-          {result && dataset && (
+          {result && (
+            <div className="ml-2 flex shrink-0 rounded-full border border-white/10 bg-white/[0.03] p-0.5" role="tablist" aria-label="View">
+              {(["explore", "summary"] as const).map((k) => (
+                <button key={k} type="button" role="tab" aria-selected={tab === k} onClick={() => setTab(k)} className={`rounded-full px-3.5 py-1 text-[13px] font-semibold transition-colors ${tab === k ? "neon-btn" : "text-ink-2 hover:text-ink"}`}>
+                  {k === "explore" ? "Explore" : "Summary"}
+                </button>
+              ))}
+            </div>
+          )}
+          {result && dataset && tab === "summary" && (
             <div className="num ml-3 hidden min-w-0 items-center gap-2 whitespace-nowrap text-[12px] text-muted md:flex">
               {dataset.source !== "sample" && <span className="max-w-[22ch] truncate" title={dataset.fileName}>{dataset.fileName}</span>}
               <span title="Run ID: a hash of the input, policy and date">Run {result.runId}</span>
@@ -277,7 +290,8 @@ export default function Desk() {
             </div>
           )}
           <nav className="ml-auto flex min-w-0 items-center gap-1 overflow-x-auto scrollbar-thin" aria-label="Tools">
-            {result && (
+            {result && tab === "explore" && <HeaderButton onClick={() => { setChat(null); setTurns([]); }} icon={<Icon.Upload />} label="New file" />}
+            {result && tab === "summary" && (
               <>
                 <HeaderButton onClick={() => setPanel("tower")} icon={<Icon.Clock />} label="Control tower" />
                 <HeaderButton onClick={() => setPanel("policy")} icon={<Icon.Sliders />} label="Policy" />
@@ -302,6 +316,15 @@ export default function Desk() {
 
       {!result || !dataset || !steps ? (
         <EmptyState onFile={onFile} onSample={() => onSample()} error={error} loading={loading} />
+      ) : tab === "explore" ? (
+        <Explore
+          result={result}
+          onSummary={() => setTab("summary")}
+          onFullDecision={(k) => {
+            setTab("summary");
+            setSelected(k);
+          }}
+        />
       ) : (
         <main className="grid flex-1 grid-cols-1 lg:flex-none lg:h-[calc(100dvh-53px)] lg:grid-cols-[400px_minmax(0,1fr)] lg:grid-rows-[minmax(0,1fr)] lg:overflow-hidden">
           <div className="order-2 h-[70vh] min-h-0 lg:order-1 lg:h-full lg:overflow-hidden">
@@ -332,7 +355,7 @@ export default function Desk() {
         </main>
       )}
 
-      {result && dataset && steps && chat && (
+      {result && dataset && steps && chat && tab === "summary" && (
         <>
           <DecisionCard
             decision={selectedDecision}
