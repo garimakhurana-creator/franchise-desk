@@ -16,7 +16,7 @@ const Diorama = dynamic(() => import("./map/Diorama"), {
   loading: () => <div className="grid h-full place-items-center text-[13px] text-muted">Building the 3D view of India…</div>,
 });
 
-export function EmptyState({ onFile, onSample, error, loading }: { onFile: (f: File) => void; onSample: () => void; error: string | null; loading: boolean }) {
+export function EmptyState({ onFile, onSample, error, loading }: { onFile: (f: File) => void; onSample: (openCity?: string) => void; error: string | null; loading: boolean }) {
   const [over, setOver] = useState(false);
   // before any upload, the pins count the requests in the bundled sample file (invented applicants), marked as sample
   const [counts, setCounts] = useState<Record<string, number> | null>(null);
@@ -66,9 +66,9 @@ export function EmptyState({ onFile, onSample, error, loading }: { onFile: (f: F
         if (f) onFile(f);
       }}
     >
-      {map3d && <Diorama source={{ kind: "region" }} points={points} overlay={zones} activeKey={picked} onPick={(k) => setPicked((p) => (p === k ? null : k))} reducedMotion={reduced} onFail={() => setMap3d(false)} autoRotate hint="Drag to rotate · scroll to zoom" />}
+      {map3d && <Diorama source={{ kind: "region" }} points={points} overlay={zones} activeKey={picked} onPick={(k) => onSample(points.find((p) => p.key === k)?.title)} reducedMotion={reduced} onFail={() => setMap3d(false)} autoRotate hint="Drag to rotate · scroll to zoom · click a city to see its requests" />}
       <PinLegend points={points} sample />
-      {!map3d && <FlatIndia points={points} activeKey={picked} onPick={(k) => setPicked((p) => (p === k ? null : k))} />}
+      {!map3d && <FlatIndia points={points} activeKey={picked} onPick={(k) => onSample(points.find((p) => p.key === k)?.title)} />}
       {over && <div className="pointer-events-none absolute inset-3 z-[4] grid place-items-center rounded-2xl border-2 border-dashed border-[#b4a6ff] bg-[#8f7cff14] text-[16px] font-semibold text-white">Drop the Excel file to open it</div>}
       <div className="absolute inset-x-0 bottom-6 z-[5] flex flex-col items-center gap-2 px-4">
         {error && (
@@ -80,7 +80,7 @@ export function EmptyState({ onFile, onSample, error, loading }: { onFile: (f: F
           <label htmlFor="file" className="neon-btn inline-flex cursor-pointer items-center gap-2 rounded-xl px-4 py-2.5 text-[14px] font-bold">
             <Icon.Upload /> {loading ? "Reading the workbook…" : "Upload your data"}
           </label>
-          <button type="button" onClick={onSample} disabled={loading} className="inline-flex items-center gap-2 rounded-xl px-3.5 py-2.5 text-[13.5px] font-semibold text-ink-2 hover:bg-white/5 hover:text-ink disabled:opacity-60">
+          <button type="button" onClick={() => onSample()} disabled={loading} className="inline-flex items-center gap-2 rounded-xl px-3.5 py-2.5 text-[13.5px] font-semibold text-ink-2 hover:bg-white/5 hover:text-ink disabled:opacity-60">
             <Icon.Spark /> Try sample data
           </button>
           <input

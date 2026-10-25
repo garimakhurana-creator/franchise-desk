@@ -126,6 +126,7 @@ export function MethodPanel({ policy }: { policy: Policy }) {
     ["8. Plan the opening", `KYC and agreement ${policy.timeline.kycAgreementWeeks} weeks, site (owned 0, rented 1, none 6 weeks), fit-out ${policy.timeline.fitoutWeeks} weeks (+3 mall, +1 upper) in parallel with training (Foundation 3, Standard 2 or Accelerated 1 week, in the applicant's language, with a buddy store), then first stock ${policy.timeline.stockPosWeeks} weeks; Tier 3 adds ${policy.timeline.tier3LogisticsWeeks} weeks for logistics.`],
     ["What the AI does", "Only reads follow-up questions in plain language (and Hindi or Kannada) and turns them into commands the rules can run. It never decides or scores, and every answer is built from the engine's output. Without the AI, a rule-based reader handles the same questions in English."],
     ["Distances", `${centroidSource || "Pin centroids"}. No catchment boundaries were provided, so overlap is judged from distances between pin centres.`],
+    ["Map credits", "3D terrain: elevation from AWS Terrain Tiles (Mapzen); imagery from Sentinel-2 cloudless by EOX (CC BY-NC-SA 4.0, contains modified Copernicus Sentinel data 2020); relief is exaggerated. Street map: OpenStreetMap contributors and Esri. Satellite views in request tabs: Google Maps."],
   ];
   return (
     <div className="space-y-4">

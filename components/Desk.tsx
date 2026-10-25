@@ -124,7 +124,8 @@ export default function Desk() {
   );
 
   const [openRequest, setOpenRequest] = useState<string | null>(null);
-  const onSample = useCallback(async (open?: string) => {
+  const [openCity, setOpenCity] = useState<string | null>(null);
+  const onSample = useCallback(async (open?: string, city?: string) => {
     setLoading(true);
     setError(null);
     try {
@@ -132,6 +133,7 @@ export default function Desk() {
       if (!r.ok) throw new Error("sample missing");
       loadBuffer(await r.arrayBuffer(), "SAMPLE DATA (invented test fixture)", "sample");
       setOpenRequest(open ?? null);
+      setOpenCity(city ?? null);
     } catch {
       setError("The sample file could not be loaded. You can still upload your own file.");
     } finally {
@@ -315,10 +317,12 @@ export default function Desk() {
       </header>
 
       {!result || !dataset || !steps ? (
-        <EmptyState onFile={onFile} onSample={() => onSample()} error={error} loading={loading} />
+        <EmptyState onFile={onFile} onSample={(city) => onSample(undefined, city)} error={error} loading={loading} />
       ) : tab === "explore" ? (
         <Explore
           result={result}
+          openCity={openCity}
+          onOpened={() => setOpenCity(null)}
           onSummary={() => setTab("summary")}
           onFullDecision={(k) => {
             setTab("summary");

@@ -749,7 +749,6 @@ export default function Diorama({ points, activeKey, onPick, reducedMotion, onFa
       <div ref={host} className="absolute inset-0" />
       <svg ref={lineLayer} className="pointer-events-none absolute inset-0 h-full w-full" aria-hidden />
       <div ref={tagLayer} className="pointer-events-none absolute inset-0" style={{ left: 0, top: 0 }} />
-      <p className="pointer-events-none absolute bottom-2 right-3 text-[10.5px] text-white/45">Elevation: AWS Terrain Tiles · Imagery: Sentinel-2 cloudless by EOX · Relief exaggerated</p>
       {hint !== "" && <p className="pointer-events-none absolute left-3 top-3 rounded-md bg-black/40 px-2.5 py-1 text-[12px] text-white/80">{hint ?? "Drag to rotate · scroll to zoom · click a territory to see its requests"}</p>}
     </div>
   );

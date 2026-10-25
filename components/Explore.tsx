@@ -41,7 +41,7 @@ function territoryBbox(points: MapPoint[]): [number, number, number, number] {
   return [w, s, e, n];
 }
 
-export function Explore({ result, onFullDecision, onSummary }: { result: RunResult; onFullDecision: (key: string) => void; onSummary: () => void }) {
+export function Explore({ result, onFullDecision, onSummary, openCity, onOpened }: { result: RunResult; onFullDecision: (key: string) => void; onSummary: () => void; openCity?: string | null; onOpened?: () => void }) {
   const [territory, setTerritory] = useState<string | null>(null);
   const [request, setRequest] = useState<string | null>(null);
   const [reduced, setReduced] = useState(false);
@@ -63,6 +63,17 @@ export function Explore({ result, onFullDecision, onSummary }: { result: RunResu
   }, [request, territory]);
 
   const tPoints = useMemo(() => territoryPoints(result), [result]);
+  // a city clicked on the first page opens straight into its territory
+  useEffect(() => {
+    if (!openCity) return;
+    const p = tPoints.find((x) => x.place === openCity || x.title === openCity);
+    if (p) {
+      setTerritory(p.key);
+      setRequest(null);
+    }
+    onOpened?.();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [openCity]);
   const zones = useMemo(() => territoryZones(tPoints, ka), [tPoints, ka]);
   const list = useMemo(() => (territory ? territoryRequests(result, territory) : []), [result, territory]);
   const t = territory ? result.territories.find((x) => x.key === territory) : null;
